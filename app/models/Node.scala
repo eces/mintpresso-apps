@@ -16,7 +16,7 @@ case class Node(var id: String, var no: Long, var ownerNo: Long, var typeNo: Lon
   var json: JsObject, var createdAt: Date, var updatedAt: Date, var referencedAt: Date) {
 
   def toJson: JsObject = {
-    json ++ Json.obj(
+    this.json ++ Json.obj(
       "$id" ->        this.id,
       "$no" ->        this.no,
       "$createdAt" -> this.createdAt,
@@ -30,6 +30,42 @@ case class Node(var id: String, var no: Long, var ownerNo: Long, var typeNo: Lon
   //    this.typeName -> this.toJson
   //  )
   // }
+
+  def save: Option[Long] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+INSERT INTO `nodes`
+(`owner`, `id`, `type`, `created`, `updated`, `referenced`, `json`)
+VALUES (
+  {ownerNo}, {id}, {typeNo}, {createdAt}, {updatedAt}, {referencedAt}, {json}
+)
+"""
+      ).on(
+        'owner          -> this.ownerNo, 
+        'id             -> this.id, 
+        'typeNo         -> this.typeNo, 
+        'createdAt      -> this.createdAt, 
+        'updatedAt      -> this.updatedAt,
+        'referencedAt   -> this.referencedAt, 
+        'json           -> Json.stringify(this.json)
+      ).executeInsert()
+    }
+  }
+
+  def delete: Boolean = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+DELETE FROM `nodes`
+WHER `no` = {no}
+LIMIT 1
+"""
+      ).on(
+        'no -> this.no
+      ).execute()
+    }
+  }
 }
 
 object Node {
@@ -47,6 +83,27 @@ object Node {
         new Node(id, no.get, ownerNo, typeNo, typeName, Json.parse(json).as[JsObject], createdAt, updatedAt, referencedAt)
       }
     }
+  }
+
+  // json from API client
+  def apply(json: JsObject): Node = {
+    val field = json.fields(0)
+    val typeName = field._1
+    val typeNo = Type(typeName).no
+    val n = field._2.as[JsObject]
+    val id = (n \ "$id").asOpt[String].getOrElse("")
+    val no = (n \ "$no").asOpt[Long].getOrElse(0L)
+    val d = new Date
+
+    // exclude $ reserved keywords
+    n - "$id" - "$no" - "$createdAt" - "$updatedAt" - "$referencedAt"
+
+    Node(id, no, 0L, typeNo, typeName, n, d, d, d)
+  }
+
+  def empty(no: Long, typeNo: Long) = {
+    val d = new Date
+    new Node("", no, 0, typeNo, Type(typeNo).name, Json.obj(), d, d, d)
   }
 
   def findOneByNo(no: Long)(implicit user: User): Option[Node] = {
@@ -81,30 +138,25 @@ WHERE `id` = {id}
     }
   }
 
-  def save(n: Node): Option[Long] = {
+  // find nodes with full text search in json string.
+  // no $keyword is allowed, multiple keys are support, partial match (LIKE) doesn't support.
+  // it has and/or issue.
+  def findAllByJson(json: JsObject) = {
+    Logger.info("Not implemented")
+    None
+  }
+
+  def delete(no: Long): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
 """
-INSERT INTO `nodes`
-(`owner`, `id`, `type`, `created`, `updated`, `referenced`, `json`)
-VALUES (
-  {ownerNo}, {id}, {typeNo}, {createdAt}, {updatedAt}, {referencedAt}, {json}
-)
+DELETE FROM `nodes`
+WHER `no` = {no}
+LIMIT 1
 """
       ).on(
-        'owner          -> n.ownerNo, 
-        'id             -> n.id, 
-        'typeNo         -> n.typeNo, 
-        'createdAt      -> n.createdAt, 
-        'updatedAt      -> n.updatedAt,
-        'referencedAt   -> n.referencedAt, 
-        'json           -> Json.stringify(n.json)
-      ).executeInsert()
+        'no -> no
+      ).execute()
     }
-  }
-
-  def delete(n: Node): Boolean = {
-    Logger.info("Not implemented")
-    false
   }
 }
