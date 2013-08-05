@@ -11,7 +11,7 @@ CREATE TABLE `edges` (
     `created` DATETIME(6) NOT NULL,
     `updated` DATETIME(6) NOT NULL
 );
-ALTER TABLE `edges` ADD INDEX ( `ownerId` );
+ALTER TABLE `edges` ADD INDEX ( `owner` );
 
 CREATE TABLE `nodes` (
     `no` bigint(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -23,7 +23,7 @@ CREATE TABLE `nodes` (
     `referenced` DATETIME(6) NOT NULL,
     `json` varchar(10240) NOT NULL
 );
-ALTER TABLE `nodes` ADD INDEX ( `ownerId` );
+ALTER TABLE `nodes` ADD INDEX ( `owner` );
 
 CREATE TABLE `types` (
   `no` bigint(20) NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -32,6 +32,5 @@ CREATE TABLE `types` (
 
 # --- !Downs
 DROP TABLE IF EXISTS `edges`;
-DROP TABLE IF EXISTS `points`;
 DROP TABLE IF EXISTS `nodes`;
-DROP TABLE IF EXISTS `pointTypes`;
+DROP TABLE IF EXISTS `types`;
