@@ -14,18 +14,17 @@ import java.util.Date
 case class User(var id: String, var no: Long, var password: String, var email: String, var name: String, var phone: String,
   var verified: Boolean = false, var readAt: Date = new Date, var createdAt: Date = new Date ) {
 
-  self: User =>
-  def toJson(u: User): JsObject = {
+  def toJson: JsObject = {
     Json.obj(
-      "$id" -> u.id,
-      "$no" -> u.no,
-      "password" -> u.password,
-      "name" -> u.name,
-      "email" -> u.email,
-      "phone" -> u.phone,
-      "verified" -> u.verified,
-      "readAt" -> u.readAt.getTime,
-      "createdAt" -> u.createdAt.getTime
+      "$id" ->        this.id,
+      "$no" ->        this.no,
+      "password" ->   this.password,
+      "name" ->       this.name,
+      "email" ->      this.email,
+      "phone" ->      this.phone,
+      "verified" ->   this.verified,
+      "readAt" ->     this.readAt.getTime,
+      "createdAt" ->  this.createdAt.getTime
     )
   }
 }
@@ -40,11 +39,12 @@ object User {
       (user \ "email").as[String],
       (user \ "name").as[String],
       (user \ "phone").as[String],
-      (json \ "verified").asOpt[Boolean].getOrElse(false),
-      (json \ "readAt").asOpt[Date].getOrElse( new Date ),
+      (user \ "verified").asOpt[Boolean].getOrElse(false),
+      (user \ "readAt").asOpt[Date].getOrElse( new Date ),
       (user \ "$createdAt").as[Date]
     )
   }
+
   def apply(request: RequestHeader): User = {
     User(
       request.session.get("id").getOrElse(""),
