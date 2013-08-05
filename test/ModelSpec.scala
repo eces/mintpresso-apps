@@ -22,7 +22,7 @@ import scala.concurrent.duration._
 
 import java.util.Date
 
-class NodeSpec extends Specification {
+class ModelSpec extends Specification {
 
   "Node" can {
 
@@ -41,12 +41,12 @@ class NodeSpec extends Specification {
 
   }
 
-  "Node API" should {
-    "create new type as needed" in {
-      true
-    }
-    "not create new type if it's already exist" in {
-      true
-    }
-  }
+  // "Node API" should {
+  //   "create new type as needed" in {
+  //     true
+  //   }
+  //   "not create new type if it's already exist" in {
+  //     true
+  //   }
+  // }
 }
