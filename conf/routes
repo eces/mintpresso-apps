@@ -1,10 +1,28 @@
-# Routes
-# This file defines all application routes (Higher priority routes first)
-# ~~~~
-
-# Home page
 GET     /                           controllers.Application.index
-GET     /v1/authorize               controllers.Application.authorize
 
-# Map static resources from the /public folder to the /assets URL path
+# API version 2 authentication
+GET     /authorize               controllers.Application.authorize
+
+# Model(node) API version 2
+GET     /:typeName               controllers.v2.Nodes.findAllByJson(typeName: String)
+GET     /:typeName/:nodeNo       controllers.v2.Nodes.findOneByNo(typeName: String, nodeNo: Long)
+GET     /:typeName/:nodeId       controllers.v2.Nodes.findOneById(typeName: String, nodeId: String)
+POST    /:typeName               controllers.v2.Nodes.add(typeName: String)
+PUT     /:typeName               controllers.v2.Nodes.addWithJson(typeName: String)
+DELETE  /:typeName               controllers.v2.Nodes.delete(typeName: String)
+
+# Status(edge) API version 2
+GET     /:sT/:v/:oT              controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String)
+GET     /:sT/:sNo/:v/:oT         controllers.v2.Edges.findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String)
+GET     /:sT/:sId/:v/:oT         controllers.v2.Edges.findAllBySubjectId(sT: String, sId: String, v: String, oT: String)
+GET     /:sT/:v/:oT/:oNo         controllers.v2.Edges.findAllByObjectNo(sT: String, v: String, oT: String, oNo: Long)
+GET     /:sT/:v/:oT/:oId         controllers.v2.Edges.findAllByObjectId(sT: String, v: String, oT: String, oId: String)
+GET     /:sT/:s/:v/:oT/:o        controllers.v2.Edges.findOne(sT: String, s: String, v: String, oT: String, o: String)
+
+POST    /:sT/:s/:v/:oT/:o        controllers.v2.Edges.add(sT: String, s: String, v: String, oT: String, o: String)
+DELETE  /status/:no              controllers.v2.Edges.delete(no: Long)
+
+GET     /order/:id.json          controllers.v2.Pickups.findOneById(id: String)
+GET     /order/:id.xml           controllers.v2.Pickups.findOneById(id: String)
+
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
