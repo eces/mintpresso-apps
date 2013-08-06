@@ -51,8 +51,8 @@ trait Secured {
         if(values.length != 2){
           Results.Forbidden("key.invalid")
         }else{
-          User.findByNo( values(0).toLong ) map { user =>
-            Key.findByNo( values(1).toLong ) map { key =>
+          User.findOneByNo( values(0).toLong ) map { implicit user =>
+            Key.findOneByNo( values(1).toLong ) map { key =>
               // signee mismatch
               if(user.no != key.ownerNo){
                 Results.Forbidden("key.invalid")

@@ -59,12 +59,12 @@ object User {
     )
   }
 
-  def findByNo(no: Long): Option[User] = {
+  def findOneByNo(no: Long): Option[User] = {
     Logger.info("Not implemented")
     None
   }
 
-  def findById(id: String): Option[User] = {
+  def findOneById(id: String): Option[User] = {
     Logger.info("Not implemented")
     None
   }
