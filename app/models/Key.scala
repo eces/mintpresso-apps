@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import java.util.Date
 
 case class Key(var id: String, var no: Long, var ownerNo: Long, var url: List[String], 
-	var address: List[String], var createdAt: Date) {
+	var address: List[String], var createdAt: Date, var updatedAt: Date) {
 
   def toJson: JsObject = {
     Json.obj(
@@ -20,8 +20,21 @@ case class Key(var id: String, var no: Long, var ownerNo: Long, var url: List[St
       "$no" ->        this.no,
       "ownerNo" ->    this.ownerNo,
       "url" ->        this.url,
-      "address" ->    this.address
+      "address" ->    this.address,
+      "$createdAt"  -> this.createdAt,
+      "$updatedAt"  -> this.updatedAt
     )
+  }
+
+  def save: Option[Long] = {
+    val k = Key(Json.obj( "apikey" -> this.toJson ))
+    // app@mintpresso.com
+    k.ownerNo = 1
+    k.save
+  }
+
+  def delete: Boolean = {
+    Node.delete(this.no)
   }
 }
 
@@ -34,11 +47,24 @@ object Key {
       (key \ "ownerNo").as[Long],
       (key \ "url").as[List[String]],
       (key \ "address").as[List[String]],
-      (key \ "$createdAt").as[Date]
+      (key \ "$createdAt").as[Date],
+      (key \ "$updatedAt").as[Date]
     )
   }
-  def findByNo(no: Long): Option[Key] = {
-    Logger.info("Not implemented")
-    None
+
+  def findOneByNo(no: Long)(implicit user: User): Option[Key] = {
+    Node.findOneByNo(no) map { n =>
+      Some(Key(n.toJson))
+    } getOrElse{
+      None
+    }
+  }
+
+  def findOneById(id: String)(implicit user: User): Option[Key] = {
+    Node.findOneById(id) map { n =>
+      Some(Key(n.toJson))
+    } getOrElse{
+      None
+    }
   }
 }
