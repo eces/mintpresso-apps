@@ -23,19 +23,6 @@ import play.api.cache._
 import models.{User, Key}
 
 trait Secured {
-  var id: Long = -1L
-  
-  def getUser(implicit request: RequestHeader): User = {
-    User(request)
-  }
-
-  def getOptionUser(implicit request: RequestHeader): Option[User] = {
-    request.session.get("id") map { id =>
-      Some(getUser)
-    } getOrElse {
-      None
-    }
-  }
 
   // "*" is for full access
   def Signed(scope: String)(f: Request[AnyContent] => User => Result) = Action { implicit request =>
