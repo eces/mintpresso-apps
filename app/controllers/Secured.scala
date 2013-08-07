@@ -24,9 +24,11 @@ import models.{User, Key}
 
 trait Secured {
   var id: Long = -1L
+  
   def getUser(implicit request: RequestHeader): User = {
     User(request)
   }
+
   def getOptionUser(implicit request: RequestHeader): Option[User] = {
     request.session.get("id") map { id =>
       Some(getUser)
@@ -34,7 +36,9 @@ trait Secured {
       None
     }
   }
-  def Signed(f: Request[AnyContent] => User => Result) = Action { implicit request =>
+
+  // "*" is for full access
+  def Signed(scope: String)(f: Request[AnyContent] => User => Result) = Action { implicit request =>
     val apikey = request.queryString.get("apikey").flatMap(_.headOption).getOrElse("")
 
     // encrypted by application.secret
@@ -44,31 +48,34 @@ trait Secured {
       // example "secret__dhn38sd308sdfh308sdfoi"
       val keys = apikey.split("__")
       if(keys.length != 2){
-        Results.Forbidden("key.invalid")
+        Results.Forbidden("key.invalid.form")
       }else{
         // should be form of "{user.no} {apikey.no}"
         val values = Crypto.decryptAES(keys(0)).split(' ')
         if(values.length != 2){
-          Results.Forbidden("key.invalid")
+          Results.Forbidden("key.invalid.length")
         }else{
           User.findOneByNo( values(0).toLong ) map { implicit user =>
             Key.findOneByNo( values(1).toLong ) map { key =>
               // signee mismatch
               if(user.no != key.ownerNo){
-                Results.Forbidden("key.invalid")
+                Results.Forbidden("key.invalid.owner")
+              }else{
+                // filter remote address
+
+                // check scope later by Secured.accepted
+                if(scope != "*" && !key.scope.contains(scope)){
+                  Results.Forbidden("key.invalid.scope")
+                }else{
+                  // passed
+                  f(request)(user)
+                }
               }
-
-              // filter remote address
-
-              // check scope later by Secured.accepted
-
-              // passed
-              f(request)(user)
             } getOrElse {
               Results.Forbidden("key.invalid")
             }
           } getOrElse {
-            Results.Forbidden("key.invalid")
+            Results.Forbidden("key.invalid.user")
           }
         }
       }

@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import java.util.Date
 
 case class Key(var id: String, var no: Long, var ownerNo: Long, var url: List[String], 
-	var address: List[String], var createdAt: Date, var updatedAt: Date) {
+	var address: List[String], var scope: List[String], var createdAt: Date, var updatedAt: Date) {
 
   def toJson: JsObject = {
     Json.obj(
@@ -21,6 +21,7 @@ case class Key(var id: String, var no: Long, var ownerNo: Long, var url: List[St
       "ownerNo" ->    this.ownerNo,
       "url" ->        this.url,
       "address" ->    this.address,
+      "scope" ->    this.scope,
       "$createdAt"  -> this.createdAt,
       "$updatedAt"  -> this.updatedAt
     )
@@ -47,6 +48,7 @@ object Key {
       (key \ "ownerNo").as[Long],
       (key \ "url").as[List[String]],
       (key \ "address").as[List[String]],
+      (key \ "scope").as[List[String]],
       (key \ "$createdAt").as[Date],
       (key \ "$updatedAt").as[Date]
     )

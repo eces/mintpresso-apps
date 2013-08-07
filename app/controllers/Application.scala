@@ -9,7 +9,7 @@ object Application extends Controller with Secured {
     Ok(views.html.index())
   }
 
-  def authorize = Signed { implicit request => user =>
+  def authorize = Signed("*") { implicit request => user =>
     Ok("authorize.ok")
   }
   
