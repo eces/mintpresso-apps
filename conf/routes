@@ -3,14 +3,6 @@ GET     /                           controllers.Application.index
 # API version 2 authentication
 GET     /authorize               controllers.Application.authorize
 
-# Model(node) API version 2
-GET     /:typeName               controllers.v2.Nodes.findAllByJson(typeName: String)
-GET     /:typeName/:nodeNo       controllers.v2.Nodes.findOneByNo(typeName: String, nodeNo: Long)
-GET     /:typeName/:nodeId       controllers.v2.Nodes.findOneById(typeName: String, nodeId: String)
-POST    /:typeName               controllers.v2.Nodes.add(typeName: String)
-PUT     /:typeName               controllers.v2.Nodes.addWithJson(typeName: String)
-DELETE  /:typeName               controllers.v2.Nodes.delete(typeName: String)
-
 # Status(edge) API version 2
 GET     /:sT/:v/:oT              controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String)
 GET     /:sT/:sNo/:v/:oT         controllers.v2.Edges.findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String)
@@ -22,6 +14,18 @@ GET     /:sT/:s/:v/:oT/:o        controllers.v2.Edges.findOne(sT: String, s: Str
 POST    /:sT/:s/:v/:oT/:o        controllers.v2.Edges.add(sT: String, s: String, v: String, oT: String, o: String)
 DELETE  /status/:no              controllers.v2.Edges.delete(no: Long)
 
+# Model(node) API version 2
+GET     /:typeName               controllers.v2.Nodes.findAllByJson(typeName: String)
+GET     /:typeName/:nodeNo       controllers.v2.Nodes.findOneByNo(typeName: String, nodeNo: Long)
+GET     /:typeName/:nodeId       controllers.v2.Nodes.findOneById(typeName: String, nodeId: String)
+POST    /:typeName               controllers.v2.Nodes.add(typeName: String)
+PUT     /:typeName/:nodeNo       controllers.v2.Nodes.addWithJson(typeName: String, nodeNo: Long)
+DELETE  /:typeName/:nodeNo       controllers.v2.Nodes.delete(typeName: String, nodeNo: Long)
+
+GET     /order/:no/prepare       controllers.v2.Orders.prepare(no: Long)
+GET     /order/:no/cancel        controllers.v2.Orders.cancel(no: Long)
+GET     /pickup/:no/prepare      controllers.v2.Pickups.prepare(no: Long)
+GET     /pickup/:no/cancel       controllers.v2.Pickups.cancel(no: Long)
 GET     /order/:id.json          controllers.v2.Pickups.findOneById(id: String)
 GET     /order/:id.xml           controllers.v2.Pickups.findOneById(id: String)
 
