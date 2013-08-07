@@ -12,7 +12,9 @@ import scala.concurrent.duration._
 import java.util.Date
 
 case class User(var id: String, var no: Long, var password: String, var email: String, var name: String, var phone: String,
-  var verified: Boolean = false, var readAt: Date = new Date, var createdAt: Date = new Date ) {
+  var verified: Boolean = false, var testmode: Boolean = true,
+  var orderLimit: Int = 5, var rateLimit: Int = 50000, var rateRemaining: Int = 50000,
+  var readAt: Date = new Date, var createdAt: Date = new Date ) {
 
   def toJson: JsObject = {
     Json.obj(
@@ -23,10 +25,20 @@ case class User(var id: String, var no: Long, var password: String, var email: S
       "email" ->      this.email,
       "phone" ->      this.phone,
       "verified" ->   this.verified,
+      "testmode" ->   this.testmode,
+      "orderLimit" -> this.orderLimit,
+      "rateLimit" ->  this.rateLimit,
+      "rateRemaining" -> this.rateRemaining,
       "readAt" ->     this.readAt.getTime,
       "createdAt" ->  this.createdAt.getTime
     )
   }
+
+  def save: Boolean = {
+    Logger.info("Not implemented")
+    true
+  }
+
 }
 
 object User {
@@ -40,22 +52,12 @@ object User {
       (user \ "name").as[String],
       (user \ "phone").as[String],
       (user \ "verified").asOpt[Boolean].getOrElse(false),
+      (user \ "testmode").as[Boolean],
+      (user \ "orderLimit").as[Int],
+      (user \ "rateLimit").as[Int],
+      (user \ "rateRemaining").as[Int],
       (user \ "readAt").asOpt[Date].getOrElse( new Date ),
       (user \ "$createdAt").as[Date]
-    )
-  }
-
-  def apply(request: RequestHeader): User = {
-    User(
-      request.session.get("id").getOrElse(""),
-      request.session.get("no").getOrElse("0").toLong,
-      "",
-      request.session.get("email").getOrElse(""),
-      request.session.get("name").getOrElse("Unknown"),
-      "",
-      request.session.get("verified").getOrElse("false").toBoolean,
-      new Date( request.session.get("readAt").getOrElse( "0" ).toLong ),
-      new Date( request.session.get("createdAt").getOrElse( "0" ).toLong )
     )
   }
 
@@ -67,11 +69,6 @@ object User {
   def findOneById(id: String): Option[User] = {
     Logger.info("Not implemented")
     None
-  }
-
-  def save(u: User): Boolean = {
-    Logger.info("Not implemented")
-    true
   }
 
 }
