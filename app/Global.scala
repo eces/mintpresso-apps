@@ -40,7 +40,16 @@ object Global extends GlobalSettings {
   }
 
   override def onStart(app: Application) {
-
+    import models._
+    Node.findOneByNo(1) match {
+      case Some(n) => {}
+      case None => {
+        val user = User.Default
+        user.password = "reset"
+        Node( user.toTypedJson ).saveWithNo
+        Logger.info(s"user(app@mintpresso.com) created.")
+      }
+    }
   }  
   
   override def onStop(app: Application) {
