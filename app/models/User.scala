@@ -61,14 +61,20 @@ object User {
     )
   }
 
-  def findOneByNo(no: Long): Option[User] = {
-    Logger.info("Not implemented")
-    None
+  def findOneByNo(no: Long)(implicit user: User = User.Default): Option[User] = {
+    Node.findOneByNo(no) map { n =>
+      Some(User(n.toJson))
+    } getOrElse{
+      None
+    }
   }
 
-  def findOneById(id: String): Option[User] = {
-    Logger.info("Not implemented")
-    None
+  def findOneById(id: String)(implicit user: User = User.Default): Option[User] = {
+    Node.findOneById(id) map { n =>
+      Some(User(n.toJson))
+    } getOrElse{
+      None
+    }
   }
 
 }
