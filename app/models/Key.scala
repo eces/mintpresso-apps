@@ -30,6 +30,12 @@ case class Key(var id: String, var no: Long, var url: List[String],
     )
   }
 
+  def toTypedJson: JsObject = {
+   Json.obj(
+     "key" -> this.toJson
+   )
+  }
+
   def save: Option[Long] = {
     val k = Node(Json.obj( "apikey" -> this.toJson ))
     // app@mintpresso.com
