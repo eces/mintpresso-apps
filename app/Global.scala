@@ -41,13 +41,41 @@ object Global extends GlobalSettings {
 
   override def onStart(app: Application) {
     import models._
+    import play.api.libs._
     Node.findOneByNo(1) match {
       case Some(n) => {}
       case None => {
         val user = User.Default
         user.password = "reset"
-        Node( user.toTypedJson ).saveWithNo
-        Logger.info(s"user(app@mintpresso.com) created.")
+        val node1 = Node( user.toTypedJson )
+        node1.no = 1
+        node1.ownerNo = 1
+        node1.saveWithNo match {
+          case Some(no) => {
+            user.no = no
+            Logger.info(s"user(app@mintpresso.com) created.")
+          }
+          case None => {
+            Logger.error(s"user(app@mintpresso.com) not created.")
+          }
+        }
+
+        val key = new Key("", 0L, List("*"), List(""), List("read_model", "create_model", "update_model", "search_status", "create_status", "delete_status", "manage_order", "manage_pickup"))
+        val node2 = Node( key.toTypedJson )
+        node2.no = 2
+        node2.ownerNo = 1
+        node2.saveWithNo match {
+          case Some(keyNo) => {
+            key.no = keyNo
+            key.id = "secret__" + Crypto.encryptAES(user.no + " " + key.no)
+            key.save
+            Edge( 0L, 1, Node.findOneByNo(user.no).get, "issue", Node.findOneByNo(key.no).get).save
+            Logger.info(s"key(${key.id}) created and issued.")
+          }
+          case None =>
+            Logger.info(s"key(...) not created.")
+        }
+
       }
     }
   }  
