@@ -32,25 +32,57 @@ case class Node(var id: String, var no: Long, var ownerNo: Long, var typeNo: Lon
     )
   }
 
+  // update if Node.no is 0 otherwise insert newly
   def save: Option[Long] = {
-    DB.withConnection { implicit conn =>
-      SQL(
+    if(this.no == 0L){
+      DB.withConnection { implicit conn =>
+        SQL(
+  """
+  INSERT INTO `nodes`
+  (`owner`, `id`, `type`, `created`, `updated`, `referenced`, `json`)
+  VALUES (
+    {ownerNo}, {id}, {typeNo}, {createdAt}, {updatedAt}, {referencedAt}, {json}
+  )
+  """
+        ).on(
+          'ownerNo        -> this.ownerNo, 
+          'id             -> this.id, 
+          'typeNo         -> this.typeNo, 
+          'createdAt      -> this.createdAt, 
+          'updatedAt      -> this.updatedAt,
+          'referencedAt   -> this.referencedAt, 
+          'json           -> Json.stringify(this.json)
+        ).executeInsert()
+      }
+    }else{
+      DB.withConnection { implicit conn =>
+        SQL(
 """
-INSERT INTO `nodes`
-(`owner`, `id`, `type`, `created`, `updated`, `referenced`, `json`)
-VALUES (
-  {ownerNo}, {id}, {typeNo}, {createdAt}, {updatedAt}, {referencedAt}, {json}
-)
+UPDATE `nodes`
+SET `owner` = {ownerNo},
+    `id` = {id},
+    `type` = {typeNo},
+    `created` = {createdAt},
+    `updated` = {updatedAt},
+    `referenced` = {referencedAt},
+    `json` = {json}
+WHERE `no` = {no}
+LIMIT 1
 """
-      ).on(
-        'owner          -> this.ownerNo, 
-        'id             -> this.id, 
-        'typeNo         -> this.typeNo, 
-        'createdAt      -> this.createdAt, 
-        'updatedAt      -> this.updatedAt,
-        'referencedAt   -> this.referencedAt, 
-        'json           -> Json.stringify(this.json)
-      ).executeInsert()
+        ).on(
+          'ownerNo        -> this.ownerNo, 
+          'id             -> this.id, 
+          'typeNo         -> this.typeNo, 
+          'createdAt      -> this.createdAt, 
+          'updatedAt      -> this.updatedAt,
+          'referencedAt   -> this.referencedAt, 
+          'json           -> Json.stringify(this.json),
+          'no             -> this.no
+        ).executeUpdate() match {
+          case 1 => Some(this.no)
+          case 0 => None
+        }
+      }
     }
   }
 
