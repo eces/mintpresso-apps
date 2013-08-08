@@ -25,11 +25,11 @@ case class Node(var id: String, var no: Long, var ownerNo: Long, var typeNo: Lon
     )
   }
 
-  // def toTypedJson: JsObject = {
-  //  Json.obj(
-  //    this.typeName -> this.toJson
-  //  )
-  // }
+  def toTypedJson: JsObject = {
+    Json.obj(
+     this.typeName -> this.toJson
+    )
+  }
 
   def save: Option[Long] = {
     DB.withConnection { implicit conn =>

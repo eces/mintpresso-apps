@@ -34,6 +34,12 @@ case class User(var id: String, var no: Long, var password: String, var email: S
     )
   }
 
+  def toTypedJson: JsObject = {
+   Json.obj(
+     "user" -> this.toJson
+   )
+  }
+
   def save: Boolean = {
     Logger.info("Not implemented")
     true
@@ -42,6 +48,8 @@ case class User(var id: String, var no: Long, var password: String, var email: S
 }
 
 object User {
+  val Default = User("app@mintpresso.com", 1L, "", "app@mintpresso.com", "mintpresso", "", true, false)
+
   def apply(json: JsValue): User = {
     val user = (json \ "user").as[JsObject]
     User(
