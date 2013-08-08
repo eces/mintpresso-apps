@@ -20,7 +20,7 @@ import scala.concurrent.stm._
 import akka.util.duration._
 import play.api.cache._
 **/
-import models.{User, Key}
+import models.{User, Key, Edge}
 
 trait Secured {
 
@@ -52,18 +52,24 @@ trait Secured {
         }else{
           User.findOneByNo( values(0).toLong ) map { implicit user =>
             Key.findOneByNo( values(1).toLong ) map { key =>
-              // signee mismatch
-              if(user.no != key.ownerNo){
-                Results.Forbidden("key.invalid.owner")
-              }else{
-                // filter remote address
-
-                // check scope later by Secured.accepted
-                if(scope != "*" && !key.scope.contains(scope)){
-                  Results.Forbidden("key.invalid.scope")
-                }else{
-                  // passed
-                  f(request)(user)
+              // user issue key ?
+              Edge.findOne(user.no, "issue", key.no) match {
+                case Some(e) => {
+                  // filter remote address
+                  if(key.url.contains("*") || key.address.contains( request.remoteAddress ) ){
+                    // check scope later by Secured.accepted
+                    if(scope != "*" && !key.scope.contains(scope)){
+                      Results.Forbidden("key.blocked.scope")
+                    }else{
+                      // passed
+                      f(request)(user)
+                    }
+                  }else{
+                    Results.Forbidden("key.blocked.filter")
+                  }
+                }
+                case None => {
+                  Results.Forbidden("key.blocked.owner")
                 }
               }
             } getOrElse {
