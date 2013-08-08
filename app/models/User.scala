@@ -36,9 +36,9 @@ case class User(var id: String, var no: Long, var password: String, var email: S
   }
 
   def toTypedJson: JsObject = {
-   Json.obj(
+    Json.obj(
      "user" -> this.toJson
-   )
+    )
   }
 
   def save: Boolean = {
