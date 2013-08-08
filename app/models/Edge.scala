@@ -78,8 +78,25 @@ object Edge {
     get[Date]("created")~ 
     get[Date]("updated") map {
       case no~ownerNo~s~sT~v~o~oT~json~createdAt~updatedAt => {
-        new Edge(no.get, ownerNo, Node.empty(s, sT), v, Node.empty(o, oT), Json.parse(json).as[JsObject], createdAt, updatedAt)
+        new Edge(no.get, ownerNo, Node.findOneByNo(s).get, v, Node.findOneByNo(o).get, Json.parse(json).as[JsObject], createdAt, updatedAt)
       }
+    }
+  }
+
+  def findOne(sNo: Long, v: String, oNo: Long)(implicit user: User = User.Default): Option[Edge] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SELECT *
+FROM `edges`
+WHERE `owner` = {ownerNo}
+  AND `s` = {s}
+  AND `o` = {o}
+"""
+      ).on( 'ownerNo -> user.no, 
+            's -> sNo,
+            'o -> oNo
+      ).singleOpt(parser)
     }
   }
 }
