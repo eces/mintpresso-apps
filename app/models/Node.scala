@@ -201,4 +201,18 @@ LIMIT 1
       ).execute()
     }
   }
+
+  def deleteAll(user: User): Boolean = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SET SQL_SAFE_UPDATES=0;
+DELETE FROM `nodes` WHERE `owner` = {owner};
+SET SQL_SAFE_UPDATES=1;
+"""
+      ).on(
+        'owner -> user.no
+      ).execute()
+    }
+  }
 }
