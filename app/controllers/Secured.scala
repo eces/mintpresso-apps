@@ -24,6 +24,14 @@ import models.{User, Key}
 
 trait Secured {
 
+  // No need to use Callback if there's no content to respond (NotFound, NoContent)
+  def Callback(status: Results.Status, json: JsObject)(implicit request: RequestHeader) = {
+    request.getQueryString("callback") match {
+      case Some(callback) => status(Jsonp(callback, json))
+      case None => status(json)
+    }
+  }
+
   // "*" is for full access
   def Signed(scope: String)(f: Request[AnyContent] => User => Result) = Action { implicit request =>
     val apikey = request.getQueryString("apikey").getOrElse("")
