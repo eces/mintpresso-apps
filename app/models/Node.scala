@@ -147,18 +147,22 @@ WHERE `nodes`.`no` = {no}
   }
 
   def findOneById(id: String)(implicit user: User = User.Default): Option[Node] = {
-    DB.withConnection { implicit conn =>
-      SQL(
-"""
-SELECT `owner`, `type` as `typeNo`, `name` as `typeName`, `id`, `created`, `updated`, `referenced`, `json`,
-FROM `nodes` and `types`
-WHERE `id` = {id}
-  AND `owner` = {ownerNo}
-  AND `nodes`.`type` = `types`.`no`
-"""
-      ).on( 'id -> id, 
-            'user -> user.no
-      ).singleOpt(parser)
+    if(id.length == 0){
+      None
+    }else{
+      DB.withConnection { implicit conn =>
+        SQL(
+  """
+  SELECT `owner`, `type` as `typeNo`, `name` as `typeName`, `id`, `created`, `updated`, `referenced`, `json`,
+  FROM `nodes` and `types`
+  WHERE `id` = {id}
+    AND `owner` = {ownerNo}
+    AND `nodes`.`type` = `types`.`no`
+  """
+        ).on( 'id -> id, 
+              'user -> user.no
+        ).singleOpt(parser)
+      }
     }
   }
 
