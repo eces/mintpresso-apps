@@ -54,6 +54,29 @@ VALUES (
     }
   }
 
+  def saveWithNo: Option[Long] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+INSERT INTO `nodes`
+(`no`, `owner`, `id`, `type`, `created`, `updated`, `referenced`, `json`)
+VALUES (
+  {no}, {ownerNo}, {id}, {typeNo}, {createdAt}, {updatedAt}, {referencedAt}, {json}
+)
+"""
+      ).on(
+        'no             -> this.no,
+        'owner          -> this.ownerNo, 
+        'id             -> this.id, 
+        'typeNo         -> this.typeNo, 
+        'createdAt      -> this.createdAt, 
+        'updatedAt      -> this.updatedAt,
+        'referencedAt   -> this.referencedAt, 
+        'json           -> Json.stringify(this.json)
+      ).executeInsert()
+    }
+  }
+
   def delete: Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
@@ -107,7 +130,7 @@ object Node {
     new Node("", no, 0, typeNo, Type(typeNo).name, Json.obj(), d, d, d)
   }
 
-  def findOneByNo(no: Long)(implicit user: User): Option[Node] = {
+  def findOneByNo(no: Long)(implicit user: User = User.Default): Option[Node] = {
     DB.withConnection { implicit conn =>
       SQL(
 """
@@ -123,7 +146,7 @@ WHERE `nodes`.`no` = {no}
     }
   }
 
-  def findOneById(id: String)(implicit user: User): Option[Node] = {
+  def findOneById(id: String)(implicit user: User = User.Default): Option[Node] = {
     DB.withConnection { implicit conn =>
       SQL(
 """
@@ -135,6 +158,24 @@ WHERE `id` = {id}
 """
       ).on( 'id -> id, 
             'user -> user.no
+      ).singleOpt(parser)
+    }
+  }
+
+  def findOneByTypeNoAndId(typeNo: Long, id: String)(implicit user: User): Option[Node] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SELECT `owner`, `type` as `typeNo`, `name` as `typeName`, `id`, `created`, `updated`, `referenced`, `json`,
+FROM `nodes` and `types`
+WHERE `id` = {id}
+  AND `owner` = {ownerNo}
+  AND `nodes`.`type` = {typeNo}
+  AND `types`.`no` = {typeNo}
+"""
+      ).on( 'id -> id, 
+            'user -> user.no,
+            'typeNo -> typeNo
       ).singleOpt(parser)
     }
   }
