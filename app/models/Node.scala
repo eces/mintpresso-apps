@@ -98,7 +98,7 @@ VALUES (
 """
       ).on(
         'no             -> this.no,
-        'owner          -> this.ownerNo, 
+        'ownerNo        -> this.ownerNo, 
         'id             -> this.id, 
         'typeNo         -> this.typeNo, 
         'createdAt      -> this.createdAt, 
@@ -126,11 +126,11 @@ LIMIT 1
 
 object Node {
   val parser = {
-    get[Pk[Long]]("no")~
+    get[Pk[Long]]("nodes.no")~
     get[Long]("owner")~ 
     get[String]("id")~
-    get[Long]("typeNo")~
-    get[String]("typeName")~
+    get[Long]("types.no")~
+    get[String]("types.name")~
     get[Date]("created")~ 
     get[Date]("updated")~ 
     get[Date]("referenced")~ 
@@ -146,13 +146,17 @@ object Node {
     val field = json.fields(0)
     val typeName = field._1
     val typeNo = Type(typeName).no
-    val n = field._2.as[JsObject]
+    var n = field._2.as[JsObject]
     val id = (n \ "$id").asOpt[String].getOrElse("")
     val no = (n \ "$no").asOpt[Long].getOrElse(0L)
     val d = new Date
 
     // exclude $ reserved keywords
-    n - "$id" - "$no" - "$createdAt" - "$updatedAt" - "$referencedAt"
+    n -= "$id"
+    n -= "$no"
+    n -= "$createdAt"
+    n -= "$updatedAt"
+    n -= "$referencedAt"
 
     Node(id, no, 0L, typeNo, typeName, n, d, d, d)
   }
@@ -166,14 +170,14 @@ object Node {
     DB.withConnection { implicit conn =>
       SQL(
 """
-SELECT `owner`, `type` as `typeNo`, `name` as `typeName`, `id`, `created`, `updated`, `referenced`, `json`,
-FROM `nodes` and `types`
+SELECT *
+FROM `nodes`, `types`
 WHERE `nodes`.`no` = {no}
   AND `owner` = {ownerNo}
   AND `nodes`.`type` = `types`.`no`
 """
       ).on( 'no -> no, 
-            'user -> user.no
+            'ownerNo -> user.no
       ).singleOpt(parser)
     }
   }
@@ -185,14 +189,14 @@ WHERE `nodes`.`no` = {no}
       DB.withConnection { implicit conn =>
         SQL(
   """
-  SELECT `owner`, `type` as `typeNo`, `name` as `typeName`, `id`, `created`, `updated`, `referenced`, `json`,
-  FROM `nodes` and `types`
+  SELECT *
+  FROM `nodes`, `types`
   WHERE `id` = {id}
     AND `owner` = {ownerNo}
     AND `nodes`.`type` = `types`.`no`
   """
         ).on( 'id -> id, 
-              'user -> user.no
+              'ownerNo -> user.no
         ).singleOpt(parser)
       }
     }
@@ -202,15 +206,15 @@ WHERE `nodes`.`no` = {no}
     DB.withConnection { implicit conn =>
       SQL(
 """
-SELECT `owner`, `type` as `typeNo`, `name` as `typeName`, `id`, `created`, `updated`, `referenced`, `json`,
-FROM `nodes` and `types`
+SELECT *
+FROM `nodes`, `types`
 WHERE `id` = {id}
   AND `owner` = {ownerNo}
   AND `nodes`.`type` = {typeNo}
   AND `types`.`no` = {typeNo}
 """
       ).on( 'id -> id, 
-            'user -> user.no,
+            'ownerNo -> user.no,
             'typeNo -> typeNo
       ).singleOpt(parser)
     }
@@ -243,11 +247,11 @@ LIMIT 1
       SQL(
 """
 SET SQL_SAFE_UPDATES=0;
-DELETE FROM `nodes` WHERE `owner` = {owner};
+DELETE FROM `nodes` WHERE `owner` = {ownerNo};
 SET SQL_SAFE_UPDATES=1;
 """
       ).on(
-        'owner -> user.no
+        'ownerNo -> user.no
       ).execute()
     }
   }
