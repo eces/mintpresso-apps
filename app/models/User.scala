@@ -11,6 +11,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import java.util.Date
 
+// if { password: "reset" } , Pages will send an email leads to change password when logging in.
 case class User(var id: String, var no: Long, var password: String, var email: String, var name: String, var phone: String,
   var verified: Boolean = false, var testmode: Boolean = true,
   var orderLimit: Int = 5, var rateLimit: Int = 50000, var rateRemaining: Int = 50000,

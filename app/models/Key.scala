@@ -42,11 +42,6 @@ case class Key(var id: String, var no: Long, var ownerNo: Long, var url: List[St
 }
 
 object Key {
-  
-  lazy val Debug = "debug"
-  lazy val Info = "info"
-  lazy val Warning = "warning"
-  lazy val Error = "error"
 
   def apply(json: JsValue): Key = {
     val key = (json \ "key").as[JsObject]

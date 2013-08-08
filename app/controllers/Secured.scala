@@ -26,7 +26,7 @@ trait Secured {
 
   // "*" is for full access
   def Signed(scope: String)(f: Request[AnyContent] => User => Result) = Action { implicit request =>
-    val apikey = request.queryString.get("apikey").flatMap(_.headOption).getOrElse("")
+    val apikey = request.getQueryString("apikey").getOrElse("")
 
     // encrypted by application.secret
     if(apikey.length == 0){

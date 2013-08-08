@@ -13,7 +13,8 @@ import play.api.Logger
 import java.util.Date
 
 case class Node(var id: String, var no: Long, var ownerNo: Long, var typeNo: Long, var typeName: String,
-  var json: JsObject, var createdAt: Date, var updatedAt: Date, var referencedAt: Date) {
+  var json: JsObject = Json.obj(),
+  var createdAt: Date = new Date , var updatedAt: Date = new Date , var referencedAt: Date = new Date ) {
 
   def toJson: JsObject = {
     this.json ++ Json.obj(

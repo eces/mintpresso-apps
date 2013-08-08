@@ -13,7 +13,7 @@ import play.api.Logger
 import java.util.Date
 
 case class Edge(var no: Long, var ownerNo: Long, var s: Node, var v: String, var o: Node,
-  var json: JsObject, var createdAt: Date, var updatedAt: Date) {
+  var json: JsObject = Json.obj(), var createdAt: Date = new Date , var updatedAt: Date = new Date ) {
 
   def toJson: JsObject = {
     this.json ++ Json.obj(
