@@ -37,7 +37,7 @@ case class Key(var id: String, var no: Long, var url: List[String],
   }
 
   def save: Option[Long] = {
-    val k = Node(Json.obj( "apikey" -> this.toJson ))
+    val k = Node(Json.obj( "key" -> this.toJson ))
     // app@mintpresso.com
     k.ownerNo = 1
     k.save
