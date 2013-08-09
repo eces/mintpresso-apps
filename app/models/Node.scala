@@ -109,16 +109,18 @@ VALUES (
     }
   }
 
-  def delete: Boolean = {
+  def delete(implicit user: User): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
 """
 DELETE FROM `nodes`
-WHER `no` = {no}
+WHERE `no` = {no}
+  AND `owner` = {ownerNo}
 LIMIT 1
 """
       ).on(
-        'no -> this.no
+        'no -> this.no,
+        'ownerNo -> user.no
       ).execute()
     }
   }
@@ -228,16 +230,18 @@ WHERE `id` = {id}
     None
   }
 
-  def delete(no: Long): Boolean = {
+  def delete(no: Long)(implicit user: User): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
 """
 DELETE FROM `nodes`
-WHER `no` = {no}
+WHERE `no` = {no}
+  AND `owner` = {ownerNo}
 LIMIT 1
 """
       ).on(
-        'no -> no
+        'no -> no,
+        'ownerNo -> user.no
       ).execute()
     }
   }

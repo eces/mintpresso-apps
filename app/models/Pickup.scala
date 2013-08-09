@@ -33,7 +33,7 @@ case class Pickup(var no: Long, title: String,
   }
 
   def delete: Boolean = {
-    Node.delete(this.no)
+    Node.delete(this.no)(User.Default)
   }
 
   def prepare = {

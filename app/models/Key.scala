@@ -44,7 +44,7 @@ case class Key(var id: String, var no: Long, var url: List[String],
   }
 
   def delete: Boolean = {
-    Node.delete(this.no)
+    Node.delete(this.no)(User.Default)
   }
 }
 

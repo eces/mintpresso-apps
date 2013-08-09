@@ -43,7 +43,7 @@ case class Log(var no: Long, var typeName: String,
   }
 
   def delete: Boolean = {
-    Node.delete(this.no)
+    Node.delete(this.no)(User.Default)
   }
 }
 
