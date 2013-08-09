@@ -38,17 +38,17 @@ trait Secured {
 
     // encrypted by application.secret
     if(apikey.length == 0){
-      Results.BadRequest("key.empty")
+      Results.Status(401)("key.empty")
     }else{
       // example "secret__dhn38sd308sdfh308sdfoi"
       val keys = apikey.split("__")
       if(keys.length != 2){
-        Results.Forbidden("key.invalid.form")
+        Results.Status(401)("key.invalid.form")
       }else{
         // should be form of "{user.no} {apikey.no}"
         val values = Crypto.decryptAES(keys(0)).split(' ')
         if(values.length != 2){
-          Results.Forbidden("key.invalid.length")
+          Results.Status(401)("key.invalid.length")
         }else{
           User.findOneByNo( values(0).toLong ) map { implicit user =>
             Key.findOneByNo( values(1).toLong ) map { key =>
@@ -59,24 +59,24 @@ trait Secured {
                   if(key.url.contains("*") || key.address.contains( request.remoteAddress ) ){
                     // check scope later by Secured.accepted
                     if(scope != "*" && !key.scope.contains(scope)){
-                      Results.Forbidden("key.blocked.scope")
+                      Results.Status(403)("key.blocked.scope")
                     }else{
                       // passed
                       f(request)(user)
                     }
                   }else{
-                    Results.Forbidden("key.blocked.filter")
+                    Results.Status(403)("key.blocked.filter")
                   }
                 }
                 case None => {
-                  Results.Forbidden("key.blocked.owner")
+                  Results.Status(403)("key.invalid.owner")
                 }
               }
             } getOrElse {
-              Results.Forbidden("key.invalid")
+              Results.Status(401)("key.invalid")
             }
           } getOrElse {
-            Results.Forbidden("key.invalid.user")
+            Results.Status(401)("key.invalid.user")
           }
         }
       }
