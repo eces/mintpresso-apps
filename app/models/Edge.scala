@@ -50,16 +50,18 @@ VALUES (
     }
   }
 
-  def delete: Boolean = {
+  def delete(implicit user: User): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
 """
 DELETE FROM `edges`
-WHER `no` = {no}
+WHERE `no` = {no}
+  AND `owner` = {ownerNo}
 LIMIT 1
 """
       ).on(
-        'no -> this.no
+        'no -> this.no,
+        'ownerNo -> user.no
       ).execute()
     }
   }
@@ -83,20 +85,134 @@ object Edge {
     }
   }
 
+  def parserWithNodes(s: Node, o: Node) = {
+    get[Pk[Long]]("no")~
+    get[Long]("owner")~ 
+    get[Long]("s")~
+    get[Long]("sType")~
+    get[String]("v")~
+    get[Long]("o")~
+    get[Long]("oType")~
+    get[String]("json")~
+    get[Date]("created")~ 
+    get[Date]("updated") map {
+      case no~ownerNo~sNo~sT~v~oNo~oT~json~createdAt~updatedAt => {
+        new Edge(no.get, ownerNo, s, v, o, Json.parse(json).as[JsObject], createdAt, updatedAt)
+      }
+    }
+  }
+
   def findOne(sNo: Long, v: String, oNo: Long)(implicit user: User = User.Default): Option[Edge] = {
+    if(v.length == 0){
+      None
+    }else{
+      DB.withConnection { implicit conn =>
+        SQL(
+  """
+  SELECT *
+  FROM `edges`
+  WHERE `owner` = {ownerNo}
+    AND `s` = {s}
+    AND `o` = {o}
+  """
+        ).on( 'ownerNo -> user.no, 
+              's -> sNo,
+              'o -> oNo
+        ).singleOpt(parser)
+      }
+    }
+  }
+
+  def findOneWith(s: Node, v: String, o: Node)(implicit user: User = User.Default): Option[Edge] = {
+    if(v.length == 0){
+      None
+    }else{
+      DB.withConnection { implicit conn =>
+        SQL(
+  """
+  SELECT *
+  FROM `edges`
+  WHERE `owner` = {ownerNo}
+    AND `s` = {s}
+    AND `o` = {o}
+  """
+        ).on( 'ownerNo -> user.no, 
+              's -> s.no,
+              'o -> o.no
+        ).singleOpt(parserWithNodes(s, o))
+      }
+    } 
+  }
+
+  def findAllBySubjectAndType(s: Node, v: String, oType: String)(implicit user: User = User.Default): List[Edge] = {
+    if(v.length == 0){
+      List()
+    }else{
+      DB.withConnection { implicit conn =>
+        SQL(
+  """
+  SELECT *
+  FROM `edges`
+  WHERE `owner` = {ownerNo}
+    AND `s` = {s}
+    AND `oType` = {oType}
+  """
+        ).on( 'ownerNo -> user.no, 
+              's -> s.no,
+              'oType -> oType
+        ).as(parser *)
+      }
+    } 
+  }
+
+  def findAllByTypeAndObject(sType: String, v: String, o: Node)(implicit user: User = User.Default): List[Edge] = {
+    if(v.length == 0){
+      List()
+    }else{
+      DB.withConnection { implicit conn =>
+        SQL(
+  """
+  SELECT *
+  FROM `edges`
+  WHERE `owner` = {ownerNo}
+    AND `o` = {o}
+    AND `sType` = {sType}
+  """
+        ).on( 'ownerNo -> user.no, 
+              'o -> o.no,
+              'sType -> sType
+        ).as(parser *)
+      }
+    } 
+  }
+
+  def deleteByNo(no: Long)(implicit user: User): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
 """
-SELECT *
-FROM `edges`
-WHERE `owner` = {ownerNo}
-  AND `s` = {s}
-  AND `o` = {o}
+DELETE FROM `edges`
+WHERE `no` = {no}
+  AND `owner` = {ownerNo}
+LIMIT 1
 """
-      ).on( 'ownerNo -> user.no, 
-            's -> sNo,
-            'o -> oNo
-      ).singleOpt(parser)
+      ).on(
+        'no -> no,
+        'ownerNo -> user.no
+      ).execute()
+    }
+  }
+
+  def deleteAll(user: User): Boolean = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SET SQL_SAFE_UPDATES=0;
+DELETE FROM `edges` WHERE `owner` = {ownerNo};
+SET SQL_SAFE_UPDATES=1;
+"""
+      ).on(
+        'ownerNo -> user.no
+      ).execute()
     }
   }
 }
