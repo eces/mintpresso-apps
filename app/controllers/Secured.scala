@@ -25,7 +25,7 @@ import models.{User, Key, Edge}
 trait Secured {
 
   // No need to use Callback if there's no content to respond (NotFound, NoContent)
-  def Callback(status: Results.Status, json: JsObject)(implicit request: RequestHeader) = {
+  def Callback(status: Results.Status, json: JsValue)(implicit request: RequestHeader) = {
     request.getQueryString("callback") match {
       case Some(callback) => status(Jsonp(callback, json))
       case None => status(json)
