@@ -12,16 +12,24 @@ import play.api.Play.current
 import play.api.Logger
 import java.util.Date
 
-case class Pickup(var no: Long, title: String,
+case class Pickup(var no: Long, var id: String, var title: String, var state: String,
   var createdAt: Date, var updatedAt: Date, var referencedAt: Date) {
 
   def toJson: JsObject = {
     Json.obj(
       "$no"         -> this.no,
+      "$id"         -> this.id,
       "title"       -> this.title,
+      "state"       -> this.state,
       "$createdAt"  -> this.createdAt,
       "$updatedAt"  -> this.updatedAt,
       "$referencedAt" -> this.referencedAt
+    )
+  }
+
+  def toTypedJson: JsObject = {
+    Json.obj(
+      "pickup" -> this.toJson
     )
   }
 
@@ -44,17 +52,38 @@ case class Pickup(var no: Long, title: String,
     // send scheduled message on Akka to PickupActor.
 
     // change running state of pickup.
-
-    Logger.info("Not implemented")
-    None
+    this.state = "running"
+    this.save match {
+      case Some(_) => true
+      case None => false
+    }
   }
 
   def cancel = {
     // send stop command to Actor.
     
     // change running state to paused.
-
-    Logger.info("Not implemented")
-    None
+    this.state = "paused"
+    this.save match {
+      case Some(_) => true
+      case None => false
+    }
   }
+}
+
+object Pickup {
+
+  def apply(json: JsValue): Pickup = {
+    val key = (json \ "pickup").as[JsObject]
+    Pickup(
+      (key \ "$no").as[Long],
+      (key \ "$id").as[String],
+      (key \ "title").as[String],
+      (key \ "state").as[String],
+      (key \ "$createdAt").as[Date],
+      (key \ "$updatedAt").as[Date],
+      (key \ "$referencedAt").as[Date]
+    )
+  }
+
 }

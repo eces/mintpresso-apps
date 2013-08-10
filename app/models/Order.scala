@@ -12,21 +12,28 @@ import play.api.Play.current
 import play.api.Logger
 import java.util.Date
 
-case class Order(var no: Long, title: String,
+case class Order(var no: Long, var title: String, var state: String,
   var createdAt: Date, var updatedAt: Date, var referencedAt: Date) {
 
   def toJson: JsObject = {
     Json.obj(
       "$no"         -> this.no,
       "title"       -> this.title,
+      "state"       -> this.state,
       "$createdAt"  -> this.createdAt,
       "$updatedAt"  -> this.updatedAt,
       "$referencedAt" -> this.referencedAt
     )
   }
 
+  def toTypedJson: JsObject = {
+    Json.obj(
+      "order" -> this.toJson
+    )
+  }
+
   def save: Option[Long] = {
-    val n = Node(Json.obj( "order" -> this.toJson ))
+    val n = Node(this.toTypedJson)
     // app@mintpresso.com
     n.ownerNo = 1
     n.save
@@ -36,7 +43,7 @@ case class Order(var no: Long, title: String,
     Node.delete(this.no)(User.Default)
   }
 
-  def prepare = {
+  def prepare: Boolean = {
     // load plan
 
     // match procedure
@@ -44,17 +51,37 @@ case class Order(var no: Long, title: String,
     // send scheduled message on Akka to OrderActor.
 
     // change running state of order.
-
-    Logger.info("Not implemented")
-    None
+    this.state = "running"
+    this.save match {
+      case Some(_) => true
+      case None => false
+    }
   }
 
-  def cancel = {
+  def cancel: Boolean = {
     // send stop command to Actor.
     
     // change running state to paused.
-
-    Logger.info("Not implemented")
-    None
+    this.state = "paused"
+    this.save match {
+      case Some(_) => true
+      case None => false
+    }
   }
+}
+
+object Order {
+
+  def apply(json: JsValue): Order = {
+    val key = (json \ "order").as[JsObject]
+    Order(
+      (key \ "$no").as[Long],
+      (key \ "title").as[String],
+      (key \ "state").as[String],
+      (key \ "$createdAt").as[Date],
+      (key \ "$updatedAt").as[Date],
+      (key \ "$referencedAt").as[Date]
+    )
+  }
+
 }
