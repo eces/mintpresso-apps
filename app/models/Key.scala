@@ -31,9 +31,9 @@ case class Key(var id: String, var no: Long, var url: List[String],
   }
 
   def toTypedJson: JsObject = {
-   Json.obj(
-     "key" -> this.toJson
-   )
+    Json.obj(
+      "key" -> this.toJson
+    )
   }
 
   def save: Option[Long] = {
