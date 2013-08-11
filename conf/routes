@@ -26,10 +26,10 @@ GET     /order/:no/prepare       controllers.v2.Orders.prepare(no: Long)
 GET     /order/:no/cancel        controllers.v2.Orders.cancel(no: Long)
 GET     /pickup/:no/prepare      controllers.v2.Pickups.prepare(no: Long)
 GET     /pickup/:no/cancel       controllers.v2.Pickups.cancel(no: Long)
-GET     /private/:no.json          controllers.v2.Pickups.findOneByNo(no: Long)
-GET     /private/:no.xml           controllers.v2.Pickups.findOneByNo(no: Long)
-GET     /public/:id.json          controllers.v2.Pickups.findOneById(id: String)
-GET     /public/:id.xml           controllers.v2.Pickups.findOneById(id: String)
+GET     /private/:no.json        controllers.v2.Pickups.findOneByNo(no: Long)
+#GET     /private/:no.xml         controllers.v2.Pickups.findOneByNo(no: Long)
+GET     /public/:id.json         controllers.v2.Pickups.findOneById(id: String)
+#GET     /public/:id.xml          controllers.v2.Pickups.findOneById(id: String)
 
 # /private/21304.json
 # /public/canxan-users.json
