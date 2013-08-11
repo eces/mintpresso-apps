@@ -15,10 +15,15 @@ object Pickups extends Controller with Secured {
   def findOneById(id: String) = Action { implicit request =>
     Node.findOneByTypeNoAndId(Type("pickup").no, id)(User.Default) match {
       case Some(node) => 
-        val pickup = Pickup(node.toTypedJson)
-        Cache.getAs[String](s"pickup ${pickup.no} json") match {
-          case Some(json) => Callback(Results.Ok, Json.parse(json))
-          case None => Status(429)("pickup.cache.empty")
+        Edge.findAllByTypeAndObject("order", "place", node) match {
+          case first :: other => {
+            val sNo = first.s.no
+            Cache.getAs[String](s"order ${sNo} json") match {
+              case Some(json) => Callback(Results.Ok, Json.parse(json))
+              case None => Status(429)("pickup.cache.empty") 
+            }
+          }
+          case List() => Status(404)("order.empty") 
         }
       case None =>
         NotFound
