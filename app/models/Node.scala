@@ -247,6 +247,22 @@ LIMIT 1
     }
   }
 
+  def countAllByTypeNo(typeNo: Long)(implicit user: User): Int = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SELECT COUNT(`no`) as `count`
+FROM `nodes`
+WHERE `type` = {type}
+  AND `owner` = {ownerNo}
+"""
+      ).on(
+        'type -> typeNo,
+        'ownerNo -> user.no
+      ).apply().head[Int]("count")
+    }
+  }
+
   def deleteAll(user: User): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
