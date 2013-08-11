@@ -1,6 +1,7 @@
 package models
 
 import play.api.mvc._
+import play.api.cache._
 import play.api.Play.current
 import play.api.db._
 import anorm._ 
@@ -11,8 +12,11 @@ import play.api.i18n.Messages
 import play.api.Play.current
 import play.api.Logger
 import java.util.Date
+import scala.concurrent.duration._
+import actors._
 
 case class Order(var no: Long, var title: String, var state: String,
+  var json: JsObject,
   var createdAt: Date, var updatedAt: Date, var referencedAt: Date) {
 
   def toJson: JsObject = {
@@ -20,6 +24,7 @@ case class Order(var no: Long, var title: String, var state: String,
       "$no"         -> this.no,
       "title"       -> this.title,
       "state"       -> this.state,
+      "json"        -> this.json,
       "$createdAt"  -> this.createdAt,
       "$updatedAt"  -> this.updatedAt,
       "$referencedAt" -> this.referencedAt
@@ -44,22 +49,60 @@ case class Order(var no: Long, var title: String, var state: String,
   }
 
   def prepare: Boolean = {
-    // load plan
-
-    // match procedure
-
-    // send scheduled message on Akka to OrderActor.
-
     // change running state of order.
     this.state = "running"
     this.save match {
-      case Some(_) => true
+      case Some(_) => 
+        Cache.remove(s"order ${this.no} state")
+        true
       case None => false
     }
   }
 
+  def prepare(implicit user: User) = {
+    // set timestamp
+    val timestamp = new Date().getTime
+    val duration = Duration((this.json \ "schedule").as[String])
+
+    // start immediately if it was paused.
+    val updatedAt = Cache.getAs[Long](s"order ${this.no} updatedAt").getOrElse(0L)
+    Cache.getAs[String](s"order ${this.no} state").getOrElse(this.state) match {
+      case "paused" | "running" => {
+        // do something if scheduled interval is over
+        if((updatedAt + duration.toSeconds) <= timestamp){
+          // load plan
+          (this.json \ "plan").as[String] match {
+            // match procedure
+            case "NodeCount" => {
+              val typeNo = Type((this.json \ "nodeType").as[String]).no
+              // send scheduled message on Akka to OrderActor.
+              Actors.order ! NodeCount(typeNo, "order ${this.no}", user.no, timestamp)
+            }
+            // case "NodeCountWithJson" => {
+            //   val typeNo = Type((this.json \ "nodeType").as[String]).no
+            //   val condition = (this.json \ "condition").as[String]
+            //   Actors.order ! NodeCount(typeNo, condition, "order ${this.no}", user.no, timestamp)
+            // }
+            case "EdgeCountWithTypesAndVerb" => {
+              val sTypeNo = Type((this.json \ "sType").as[String]).no
+              val oTypeNo = Type((this.json \ "oType").as[String]).no
+              val v = (this.json \ "sType").as[String]
+              Actors.order ! EdgeCountWithTypesAndVerb(sTypeNo, oTypeNo, v, "order ${this.no}", user.no, timestamp)
+            }
+            case _ => {
+              // error
+            }
+          }
+        }
+      }
+
+      // already in progress so let's drop it.
+      case "hold" =>
+    }
+  }
+
   def cancel: Boolean = {
-    // send stop command to Actor.
+    // send stop command to Cache state.
     
     // change running state to paused.
     this.state = "paused"
@@ -78,6 +121,7 @@ object Order {
       (key \ "$no").as[Long],
       (key \ "title").as[String],
       (key \ "state").as[String],
+      (key \ "json").as[JsObject],
       (key \ "$createdAt").as[Date],
       (key \ "$updatedAt").as[Date],
       (key \ "$referencedAt").as[Date]
