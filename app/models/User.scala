@@ -50,6 +50,7 @@ case class User(var id: String, var no: Long, var password: String, var email: S
 
 object User {
   val Default = User("app@mintpresso.com", 1L, "", "app@mintpresso.com", "mintpresso", "", true, false)
+  def Empty(no: Long) = User("", no, "", "", "", "", false, false)
 
   def apply(json: JsValue): User = {
     val user = (json \ "user").as[JsObject]
