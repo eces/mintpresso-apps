@@ -55,6 +55,7 @@ case class Node(var id: String, var no: Long, var ownerNo: Long, var typeNo: Lon
         ).executeInsert()
       }
     }else{
+      this.updatedAt = new Date
       DB.withConnection { implicit conn =>
         SQL(
 """
