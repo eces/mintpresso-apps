@@ -48,6 +48,16 @@ case class Order(var no: Long, var title: String, var state: String,
     Node.delete(this.no)(User.Default)
   }
 
+  def addCallback(key: String) = {
+    // set hook for resource (rpush)
+    var newSet: Set[Long] = Set(this.no)
+    Cache.getAs[Set[Long]](s"${key} callback order") match {
+      case Some(s: Set[Long]) => newSet ++= s
+      case None =>
+    }
+    Cache.set(s"${key} callback order", newSet)
+  }
+
   def prepare: Boolean = {
     // change running state of order.
     this.state = "running"
@@ -75,8 +85,12 @@ case class Order(var no: Long, var title: String, var state: String,
             // match procedure
             case "NodeCount" => {
               val typeNo = Type((this.json \ "nodeType").as[String]).no
+
               // send scheduled message on Akka to OrderActor.
               Actors.order ! NodeCount(typeNo, "order ${this.no}", user.no, timestamp)
+
+              // set hook for resource (rpush)
+              this.addCallback(s"${user.no} node typeNo:${typeNo}")
             }
             // case "NodeCountWithJson" => {
             //   val typeNo = Type((this.json \ "nodeType").as[String]).no
@@ -88,6 +102,8 @@ case class Order(var no: Long, var title: String, var state: String,
               val oTypeNo = Type((this.json \ "oType").as[String]).no
               val v = (this.json \ "sType").as[String]
               Actors.order ! EdgeCountWithTypesAndVerb(sTypeNo, oTypeNo, v, "order ${this.no}", user.no, timestamp)
+              // this.addCallback(s"${user.no} edge sTypeNo:${sTypeNo} oTypeNo:${oTypeNo}")
+              this.addCallback(s"${user.no} edge v:${v}")
             }
             case _ => {
               // error
