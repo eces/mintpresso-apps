@@ -2,10 +2,12 @@ package controllers.v2
 
 import play.api._
 import play.api.mvc._
+import play.api.cache._
+import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.json.Json._
 import controllers._
-import models.{Node, Edge, Type}
+import models.{Node, Edge, Type, Order}
 
 object Edges extends Controller with Secured with TypeConversion {
   
@@ -179,6 +181,15 @@ object Edges extends Controller with Secured with TypeConversion {
         
         e.save match {
           case Some(no: Long) => {
+            // respond callback
+            Cache.getAs[Set[Long]](s"${user.no} edge v:${e.v}") match {
+              case Some(list: Set[Long]) => {
+                list.foreach { orderNo =>
+                  Order(Node.findOneByNo(orderNo).get.toTypedJson).prepare(user)
+                }
+              }
+              case None =>
+            }
             // debug
             Callback(Results.Created, Node.findOneByNo(no).get.toTypedJson)
           }
