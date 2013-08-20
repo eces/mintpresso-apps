@@ -45,39 +45,45 @@ trait Secured {
       if(keys.length != 2){
         Results.Status(401)("key.invalid.form")
       }else{
-        // should be form of "{user.no} {apikey.no}"
-        val values = Crypto.decryptAES(keys(1)).split(' ')
-        if(values.length != 2){
-          Results.Status(401)("key.invalid.length")
-        }else{
-          User.findOneByNo( values(0).toLong ) map { implicit user =>
-            Key.findOneByNo( values(1).toLong ) map { key =>
-              // user issue key ?
-              Edge.findOne(user.no, "issue", key.no) match {
-                case Some(e) => {
-                  // filter remote address
-                  if(key.url.contains("*") || key.address.contains( request.remoteAddress ) ){
-                    // check scope later by Secured.accepted
-                    if(scope != "*" && !key.scope.contains(scope)){
-                      Results.Status(403)("key.blocked.scope")
+        var values: Array[String] = Array()
+        try {
+          // should be form of "{user.no} {apikey.no}"
+          values = Crypto.decryptAES(keys(1)).split(' ')
+
+          if(values.length != 2){
+            Results.Status(401)("key.invalid.length")
+          }else{
+            User.findOneByNo( values(0).toLong ) map { implicit user =>
+              Key.findOneByNo( values(1).toLong ) map { key =>
+                // user issue key ?
+                Edge.findOne(user.no, "issue", key.no) match {
+                  case Some(e) => {
+                    // filter remote address
+                    if(key.url.contains("*") || key.address.contains( request.remoteAddress ) ){
+                      // check scope later by Secured.accepted
+                      if(scope != "*" && !key.scope.contains(scope)){
+                        Results.Status(403)("key.blocked.scope")
+                      }else{
+                        // passed
+                        f(request)(user)
+                      }
                     }else{
-                      // passed
-                      f(request)(user)
+                      Results.Status(403)("key.blocked.filter")
                     }
-                  }else{
-                    Results.Status(403)("key.blocked.filter")
+                  }
+                  case None => {
+                    Results.Status(403)("key.invalid.owner")
                   }
                 }
-                case None => {
-                  Results.Status(403)("key.invalid.owner")
-                }
+              } getOrElse {
+                Results.Status(401)("key.invalid")
               }
             } getOrElse {
-              Results.Status(401)("key.invalid")
+              Results.Status(401)("key.invalid.user")
             }
-          } getOrElse {
-            Results.Status(401)("key.invalid.user")
           }
+        } catch {
+          case e: Exception => Results.Status(401)("key.invalid.phrase")
         }
       }
     }
