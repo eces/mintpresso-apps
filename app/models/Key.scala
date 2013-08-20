@@ -66,7 +66,7 @@ object Key {
 
   def findOneByNo(no: Long)(implicit user: User): Option[Key] = {
     Node.findOneByNo(no) map { n =>
-      Some(Key(n.toJson))
+      Some(Key(n.toTypedJson))
     } getOrElse{
       None
     }
@@ -74,7 +74,7 @@ object Key {
 
   def findOneById(id: String)(implicit user: User): Option[Key] = {
     Node.findOneById(id) map { n =>
-      Some(Key(n.toJson))
+      Some(Key(n.toTypedJson))
     } getOrElse{
       None
     }

@@ -53,6 +53,7 @@ object User {
   def Empty(no: Long) = User("", no, "", "", "", "", false, false)
 
   def apply(json: JsValue): User = {
+    println(json)
     val user = (json \ "user").as[JsObject]
     User(
       (user \ "$id").as[String],
@@ -73,7 +74,7 @@ object User {
 
   def findOneByNo(no: Long)(implicit user: User = User.Default): Option[User] = {
     Node.findOneByNo(no) map { n =>
-      Some(User(n.toJson))
+      Some(User(n.toTypedJson))
     } getOrElse{
       None
     }
@@ -81,7 +82,7 @@ object User {
 
   def findOneById(id: String)(implicit user: User = User.Default): Option[User] = {
     Node.findOneById(id) map { n =>
-      Some(User(n.toJson))
+      Some(User(n.toTypedJson))
     } getOrElse{
       None
     }
