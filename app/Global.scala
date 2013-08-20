@@ -92,7 +92,7 @@ object Global extends GlobalSettings {
 
   override def onHandlerNotFound(request: RequestHeader): Result = {
     Logger.warn(s"[HandlerNotFound] ${request}")
-    Results.NotFound
+    Results.NotFound("unknown.api")
   }
 
   override def onBadRequest(request: RequestHeader, error: String) = {
