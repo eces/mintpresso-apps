@@ -4,11 +4,13 @@ GET     /                           controllers.Application.index
 GET     /authorize               controllers.Application.authorize
 
 # Status(edge) API version 2
-GET     /:sT/:v/:oT              controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String)
-GET     /:sT/:sNo/:v/:oT         controllers.v2.Edges.findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String)
-GET     /:sT/:sId/:v/:oT         controllers.v2.Edges.findAllBySubjectId(sT: String, sId: String, v: String, oT: String)
-GET     /:sT/:v/:oT/:oNo         controllers.v2.Edges.findAllByObjectNo(sT: String, v: String, oT: String, oNo: Long)
-GET     /:sT/:v/:oT/:oId         controllers.v2.Edges.findAllByObjectId(sT: String, v: String, oT: String, oId: String)
+GET     /:sT/:v/:oT               controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String)
+GET     /:sT/$sNo<[0-9]+>/:v/:oT  controllers.v2.Edges.findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String)
+GET     /:sT/:v/:oT/$oNo<[0-9]+>  controllers.v2.Edges.findAllByObjectNo(sT: String, v: String, oT: String, oNo: Long)
+GET     /:sT/:sId/:v/some/:oT     controllers.v2.Edges.findAllBySubjectId(sT: String, sId: String, v: String, oT: String)
+GET     /some/:sT/:v/:oT/:oId     controllers.v2.Edges.findAllByObjectId(sT: String, v: String, oT: String, oId: String)
+
+# accepts both $no and $id
 GET     /:sT/:s/:v/:oT/:o        controllers.v2.Edges.findOne(sT: String, s: String, v: String, oT: String, o: String)
 
 POST    /:sT/:s/:v/:oT/:o        controllers.v2.Edges.add(sT: String, s: String, v: String, oT: String, o: String)
@@ -16,7 +18,7 @@ DELETE  /status/:no              controllers.v2.Edges.delete(no: Long)
 
 # Model(node) API version 2
 GET     /:typeName               controllers.v2.Nodes.findAllByJson(typeName: String)
-GET     /:typeName/:nodeNo       controllers.v2.Nodes.findOneByNo(typeName: String, nodeNo: Long)
+GET     /:typeName/$nodeNo<[0-9]+> controllers.v2.Nodes.findOneByNo(typeName: String, nodeNo: Long)
 GET     /:typeName/:nodeId       controllers.v2.Nodes.findOneById(typeName: String, nodeId: String)
 POST    /:typeName               controllers.v2.Nodes.add(typeName: String)
 PUT     /:typeName/:nodeNo       controllers.v2.Nodes.addWithJson(typeName: String, nodeNo: Long)
