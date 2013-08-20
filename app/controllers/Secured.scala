@@ -46,7 +46,7 @@ trait Secured {
         Results.Status(401)("key.invalid.form")
       }else{
         // should be form of "{user.no} {apikey.no}"
-        val values = Crypto.decryptAES(keys(0)).split(' ')
+        val values = Crypto.decryptAES(keys(1)).split(' ')
         if(values.length != 2){
           Results.Status(401)("key.invalid.length")
         }else{
