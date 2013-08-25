@@ -16,10 +16,10 @@ object Edges extends Controller with Secured with TypeConversion {
   }
 
   def findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String) = Signed("search_status") { implicit request => implicit user =>
-    
     Node.findOneByNo(sNo) match {
       case Some(sNode) => {
-        val edges = Edge.findAllBySubjectAndType(sNode, v, oT)
+        val edges = Edge.findAllBySubjectAndTypeNo(sNode, v, Type(oT).no)
+        println(edges.length)
         if(edges.length > 0){
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
@@ -37,7 +37,7 @@ object Edges extends Controller with Secured with TypeConversion {
   def findAllBySubjectId(sT: String, sId: String, v: String, oT: String) = Signed("search_status") { implicit request => implicit user =>
     Node.findOneByTypeNoAndId(Type(sT).no, sId) match {
       case Some(sNode) => {
-        val edges = Edge.findAllBySubjectAndType(sNode, v, oT)
+        val edges = Edge.findAllBySubjectAndTypeNo(sNode, v, Type(oT).no)
         if(edges.length > 0){
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
@@ -54,7 +54,7 @@ object Edges extends Controller with Secured with TypeConversion {
   def findAllByObjectNo(sT: String, v: String, oT: String, oNo: Long) = Signed("search_status") { implicit request => implicit user =>
     Node.findOneByNo(oNo) match {
       case Some(oNode) => {
-        val edges = Edge.findAllByTypeAndObject(sT, v, oNode)
+        val edges = Edge.findAllByTypeNoAndObject(Type(sT).no, v, oNode)
         if(edges.length > 0){
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
@@ -71,7 +71,7 @@ object Edges extends Controller with Secured with TypeConversion {
   def findAllByObjectId(sT: String, v: String, oT: String, oId: String) = Signed("search_status") { implicit request => implicit user =>
     Node.findOneByTypeNoAndId(Type(oT).no, oId) match {
       case Some(oNode) => {
-        val edges = Edge.findAllByTypeAndObject(sT, v, oNode)
+        val edges = Edge.findAllByTypeNoAndObject(Type(sT).no, v, oNode)
         if(edges.length > 0){
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
