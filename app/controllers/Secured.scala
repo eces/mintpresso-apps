@@ -83,7 +83,9 @@ trait Secured {
             }
           }
         } catch {
-          case e: Exception => Results.Status(401)("key.invalid.phrase")
+          case e: Exception => 
+            e.printStackTrace
+            Results.Status(401)("key.invalid.phrase")
         }
       }
     }

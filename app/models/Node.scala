@@ -178,6 +178,8 @@ FROM `nodes`, `types`
 WHERE `nodes`.`no` = {no}
   AND `owner` = {ownerNo}
   AND `nodes`.`type` = `types`.`no`
+ORDER BY `updated` DESC
+LIMIT 1
 """
       ).on( 'no -> no, 
             'ownerNo -> user.no
@@ -197,6 +199,8 @@ WHERE `nodes`.`no` = {no}
   WHERE `id` = {id}
     AND `owner` = {ownerNo}
     AND `nodes`.`type` = `types`.`no`
+  ORDER BY `updated` DESC
+  LIMIT 1
   """
         ).on( 'id -> id, 
               'ownerNo -> user.no
@@ -208,14 +212,16 @@ WHERE `nodes`.`no` = {no}
   def findOneByTypeNoAndId(typeNo: Long, id: String)(implicit user: User): Option[Node] = {
     DB.withConnection { implicit conn =>
       SQL(
-"""
-SELECT *
-FROM `nodes`, `types`
-WHERE `id` = {id}
-  AND `owner` = {ownerNo}
-  AND `nodes`.`type` = {typeNo}
-  AND `types`.`no` = {typeNo}
-"""
+  """
+  SELECT *
+  FROM `nodes`, `types`
+  WHERE `id` = {id}
+    AND `owner` = {ownerNo}
+    AND `nodes`.`type` = {typeNo}
+    AND `types`.`no` = {typeNo}
+  ORDER BY `updated` DESC
+  LIMIT 1
+  """
       ).on( 'id -> id, 
             'ownerNo -> user.no,
             'typeNo -> typeNo
@@ -234,12 +240,16 @@ WHERE `id` = {id}
   def delete(no: Long)(implicit user: User): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
-"""
-DELETE FROM `nodes`
-WHERE `no` = {no}
-  AND `owner` = {ownerNo}
-LIMIT 1
-"""
+  """
+  DELETE FROM `nodes`
+  WHERE `no` = {no}
+    AND `owner` = {ownerNo}
+  LIMIT 1;
+
+  DELETE FROM `edges`
+  WHERE (`s` = {no} OR `o` = {no})
+    AND `owner` = {ownerNo};
+  """
       ).on(
         'no -> no,
         'ownerNo -> user.no
@@ -250,12 +260,12 @@ LIMIT 1
   def countAllByTypeNo(typeNo: Long)(implicit user: User): Int = {
     DB.withConnection { implicit conn =>
       SQL(
-"""
-SELECT COUNT(`no`) as `count`
-FROM `nodes`
-WHERE `type` = {type}
-  AND `owner` = {ownerNo}
-"""
+  """
+  SELECT COUNT(`no`) as `count`
+  FROM `nodes`
+  WHERE `type` = {type}
+    AND `owner` = {ownerNo}
+  """
       ).on(
         'type -> typeNo,
         'ownerNo -> user.no
@@ -266,11 +276,11 @@ WHERE `type` = {type}
   def deleteAll(user: User): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
-"""
-SET SQL_SAFE_UPDATES=0;
-DELETE FROM `nodes` WHERE `owner` = {ownerNo};
-SET SQL_SAFE_UPDATES=1;
-"""
+  """
+  SET SQL_SAFE_UPDATES=0;
+  DELETE FROM `nodes` WHERE `owner` = {ownerNo};
+  SET SQL_SAFE_UPDATES=1;
+  """
       ).on(
         'ownerNo -> user.no
       ).execute()

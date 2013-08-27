@@ -114,6 +114,8 @@ object Edge {
   WHERE `owner` = {ownerNo}
     AND `s` = {s}
     AND `o` = {o}
+  ORDER BY `updated` DESC
+  LIMIT 1
   """
         ).on( 'ownerNo -> user.no, 
               's -> sNo,
@@ -135,6 +137,8 @@ object Edge {
   WHERE `owner` = {ownerNo}
     AND `s` = {s}
     AND `o` = {o}
+  ORDER BY `updated` DESC
+  LIMIT 1
   """
         ).on( 'ownerNo -> user.no, 
               's -> s.no,
