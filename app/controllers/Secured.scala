@@ -61,7 +61,7 @@ trait Secured {
                     // filter remote address
                     if(key.url.contains("*") || key.address.contains( request.remoteAddress ) ){
                       // check scope later by Secured.accepted
-                      if(scope != "*" && !key.scope.contains(scope)){
+                      if(!key.scope.contains(scope)){
                         Results.Status(403)("key.blocked.scope")
                       }else{
                         // passed

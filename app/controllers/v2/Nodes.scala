@@ -84,6 +84,8 @@ object Nodes extends Controller with Secured {
         val node = Node(json.as[JsObject])
         Node.findOneByNo(node.no) map { n =>
           n.updatedAt = new Date
+          n.id = node.id
+          n.json = node.json
           n.save
           // respond callback
           Cache.getAs[Set[Long]](s"${user.no} node typeNo:${node.typeNo}") match {

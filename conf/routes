@@ -1,7 +1,7 @@
-GET     /                           controllers.Application.index
+GET     /                         controllers.Application.index
 
 # API version 2 authentication
-GET     /authorize               controllers.Application.authorize
+GET     /authorize                controllers.Application.authorize
 
 # Status(edge) API version 2
 GET     /:sT/:v/:oT               controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String)
