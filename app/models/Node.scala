@@ -245,7 +245,14 @@ LIMIT 1
   WHERE `no` = {no}
     AND `owner` = {ownerNo}
   LIMIT 1;
-
+  """
+      ).on(
+        'no -> no,
+        'ownerNo -> user.no
+      ).execute()
+      
+      SQL(
+  """
   DELETE FROM `edges`
   WHERE (`s` = {no} OR `o` = {no})
     AND `owner` = {ownerNo};

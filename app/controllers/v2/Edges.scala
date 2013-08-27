@@ -30,7 +30,6 @@ object Edges extends Controller with Secured with TypeConversion {
         NotFound
       }
     }
-
   }
 
   def findAllBySubjectId(sT: String, sId: String, v: String, oT: String) = Signed("search_status") { implicit request => implicit user =>
