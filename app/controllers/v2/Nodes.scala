@@ -13,19 +13,24 @@ import java.util.Date
 
 object Nodes extends Controller with Secured {
   
-  def findAllByJson(typeName: String) = Signed("search_model") { implicit request => implicit user =>
+  def findAllByJson(typeName: String, json: Option[String]) = Signed("search_model") { implicit request => implicit user =>
     NotImplemented
   }
   
   def findOneByNo(typeName: String, nodeNo: Long) = Signed("read_model") { implicit request => implicit user =>
     Node.findOneByNo(nodeNo) match {
       case Some(n) => {
-        // debug
-        Callback(Results.Ok, n.toTypedJson)
+        if(n.typeName != typeName){
+          // warning
+          Callback(Results.NotFound, Json.obj("status" -> 404))
+        }else{
+          // debug
+          Callback(Results.Ok, n.toTypedJson)
+        }
       }
       case None => {
         // info
-        NotFound
+        Callback(Results.NotFound, Json.obj("status" -> 404))
       }
     }
   }
@@ -33,12 +38,17 @@ object Nodes extends Controller with Secured {
   def findOneById(typeName: String, nodeId: String) = Signed("read_model") { implicit request => implicit user =>
     Node.findOneById(nodeId) match {
       case Some(n) => {
-        // debug
-        Callback(Results.Ok, n.toTypedJson)
+        if(n.typeName != typeName){
+          // warning
+          Callback(Results.NotFound, Json.obj("status" -> 404))
+        }else{
+          // debug
+          Callback(Results.Ok, n.toTypedJson)
+        }
       }
       case None => {
         // info
-        NotFound
+        Callback(Results.NotFound, Json.obj("status" -> 404))
       }
     }
   }
