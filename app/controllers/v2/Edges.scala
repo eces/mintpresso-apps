@@ -111,7 +111,13 @@ object Edges extends Controller with Secured with TypeConversion {
       case (Some(sNode), Some(oNode)) => {
         Edge.findOneWith(sNode, v, oNode) match {
           case Some(e) => 
-            Callback(Results.Ok, e.toJson)
+            if(sNode.typeName != sT || oNode.typeName != oT){
+              // warning
+              NotFound
+            }else{
+              // debug
+              Callback(Results.Ok, e.toJson)
+            }
           case None =>
             NotFound
         }
