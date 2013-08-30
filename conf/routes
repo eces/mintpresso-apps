@@ -17,7 +17,7 @@ POST    /:sT/:s/:v/:oT/:o        controllers.v2.Edges.add(sT: String, s: String,
 DELETE  /status/:no              controllers.v2.Edges.delete(no: Long)
 
 # Model(node) API version 2
-GET     /:typeName               controllers.v2.Nodes.findAllByJson(typeName: String)
+GET     /:typeName               controllers.v2.Nodes.findAllByJson(typeName: String, json: Option[String])
 GET     /:typeName/$nodeNo<[0-9]+> controllers.v2.Nodes.findOneByNo(typeName: String, nodeNo: Long)
 GET     /:typeName/:nodeId       controllers.v2.Nodes.findOneById(typeName: String, nodeId: String)
 POST    /:typeName               controllers.v2.Nodes.add(typeName: String)
