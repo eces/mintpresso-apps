@@ -4,7 +4,7 @@ GET     /                         controllers.Application.index
 GET     /authorize                controllers.Application.authorize
 
 # Status(edge) API version 2
-GET     /:sT/:v/:oT               controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String)
+GET     /:sT/:v/:oT               controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String])
 GET     /:sT/$sNo<[0-9]+>/:v/:oT  controllers.v2.Edges.findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String)
 GET     /:sT/:v/:oT/$oNo<[0-9]+>  controllers.v2.Edges.findAllByObjectNo(sT: String, v: String, oT: String, oNo: Long)
 GET     /:sT/:sId/:v/some/:oT     controllers.v2.Edges.findAllBySubjectId(sT: String, sId: String, v: String, oT: String)
