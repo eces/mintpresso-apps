@@ -190,6 +190,31 @@ object Edge {
     } 
   }
 
+  def findAllByTypes(sTypeNo: Long, v: String, oTypeNo: Long, orderBy: String = "", limit: String = "")(implicit user: User = User.Default): List[Edge] = {
+    if(v.length == 0){
+      List()
+    }else{
+      DB.withConnection { implicit conn =>
+        SQL(
+  s"""
+  SELECT *
+  FROM `edges`
+  WHERE `owner` = {ownerNo}
+    AND `sType` = {sType}
+    AND `v` = {v}
+    AND `oType` = {oType}
+  ${orderBy}
+  ${limit}
+  """
+        ).on( 'ownerNo -> user.no, 
+              'sType -> sTypeNo,
+              'v -> v,
+              'oType -> oTypeNo
+        ).as(parser *)
+      }
+    }
+  }
+
   def deleteByNo(no: Long)(implicit user: User): Boolean = {
     DB.withConnection { implicit conn =>
       SQL(
