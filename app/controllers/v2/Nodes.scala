@@ -13,8 +13,29 @@ import java.util.Date
 
 object Nodes extends Controller with Secured {
   
-  def findAllByJson(typeName: String, json: Option[String]) = Signed("search_model") { implicit request => implicit user =>
-    NotImplemented
+  def findAllByJson(typeName: String, json: Option[String], offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String]) = Signed("search_model") { implicit request => implicit user =>
+    var pureJson = "%"
+    json.map { j =>
+      try {
+        // val temp = Json.parse(j).as[JsObject]
+        Json.parse(j).as[JsObject].fields foreach { pair =>
+          pureJson += s""""${pair._1}":${pair._2.toString}%"""
+        }
+      } catch {
+        case e: Exception => 
+          // error
+          Callback(Results.BadRequest, Json.obj("status" -> 400))
+      }
+    }
+    var orderBy = Node.orderBy(newest, oldest)
+    var slice = Node.limitBy(offset, limit)
+    val nodes = Node.findAllByTypeNoAndJson(Type(typeName).no, pureJson)
+    println(pureJson)
+    if(nodes.length > 0){
+      Callback(Results.Ok, nodes.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
+    }else{
+      Callback(Results.Ok, Json.arr())
+    }
   }
   
   def findOneByNo(typeName: String, nodeNo: Long) = Signed("read_model") { implicit request => implicit user =>

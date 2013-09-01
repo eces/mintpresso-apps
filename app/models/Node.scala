@@ -232,9 +232,24 @@ LIMIT 1
   // find nodes with full text search in json string.
   // no $keyword is allowed, multiple keys are support, partial match (LIKE) doesn't support.
   // it has and/or issue.
-  def findAllByJson(json: JsObject) = {
-    Logger.info("Not implemented")
-    None
+  def findAllByTypeNoAndJson(typeNo: Long, json: String)(implicit user: User): List[Node] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+  """
+  SELECT *
+  FROM `nodes`, `types`
+  WHERE `json` LIKE {json}
+    AND `owner` = {ownerNo}
+    AND `nodes`.`type` = {typeNo}
+    AND `types`.`no` = {typeNo}
+  ORDER BY `updated` DESC
+  LIMIT 1
+  """
+      ).on( 'json -> json, 
+            'ownerNo -> user.no,
+            'typeNo -> typeNo
+      ).as(parser *)
+    }
   }
 
   def delete(no: Long)(implicit user: User): Boolean = {
@@ -292,5 +307,41 @@ LIMIT 1
         'ownerNo -> user.no
       ).execute()
     }
+  }
+
+  val dates = List("created", "updated", "referenced")
+
+  def orderBy(newest: Option[String], oldest: Option[String]): String = {
+    var orderBy = ""
+    (newest, oldest) match {
+      case (Some(a), _) if dates.contains(a) =>
+        orderBy = s"ORDER BY `${a}` desc"
+      case (None, Some(b)) if dates.contains(b) =>
+        orderBy = s"ORDER BY `${b}` asc"
+      case (None, None) =>
+        orderBy = "ORDER BY `updated` desc"
+      case (_, _) =>
+        // warn
+        orderBy = "ORDER BY `updated` desc"
+    }
+    orderBy
+  }
+
+  def limitBy(offset: Option[Long], limit: Option[Long]): String = {
+    var slice = ""
+    (offset, limit) match {
+      case (Some(a: Long), Some(b: Long)) if (a >= 0 && b >= 1) =>
+        slice = s"LIMIT ${a}, ${b}"
+      case (Some(a: Long), _) if (a >= 0) =>
+        slice = s"LIMIT ${a}, 100"
+      case (_, Some(b: Long)) if (b >= 1) =>
+        slice = s"LIMIT 0, ${b}"
+      case (None, None) =>
+        slice = "LIMIT 0, 100"
+      case (_, _) =>
+        // warn
+        slice = "LIMIT 0, 100"
+    }
+    slice
   }
 }
