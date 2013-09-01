@@ -10,35 +10,9 @@ import controllers._
 import models.{Node, Edge, Type, Order}
 
 object Edges extends Controller with Secured with TypeConversion {
-  val dates = List("created", "updated", "referenced")
   def findAllByTypes(sT: String, v: String, oT: String, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String]) = Signed("search_status") { implicit request => implicit user =>
-    var orderBy = ""
-    (newest, oldest) match {
-      case (Some(a), _) if dates.contains(a) =>
-        orderBy = s"ORDER BY `${a}` desc"
-      case (None, Some(b)) if dates.contains(b) =>
-        orderBy = s"ORDER BY `${b}` asc"
-      case (None, None) =>
-        orderBy = "ORDER BY `updated` desc"
-      case (_, _) =>
-        // warn
-        orderBy = "ORDER BY `updated` desc"
-
-    }
-    var slice = ""
-    (offset, limit) match {
-      case (Some(a: Long), Some(b: Long)) if (a >= 0 && b >= 1) =>
-        slice = s"LIMIT ${a}, ${b}"
-      case (Some(a: Long), _) if (a >= 0) =>
-        slice = s"LIMIT ${a}, 100"
-      case (_, Some(b: Long)) if (b >= 1) =>
-        slice = s"LIMIT 0, ${b}"
-      case (None, None) =>
-        slice = "LIMIT 0, 100"
-      case (_, _) =>
-        // warn
-        slice = "LIMIT 0, 100"
-    }
+    var orderBy = Edge.orderBy(newest, oldest)
+    var slice = Edge.limitBy(offset, limit)
     val edges = Edge.findAllByTypes(Type(sT).no, v, Type(oT).no, orderBy, slice)
     if(edges.length > 0){
       Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )

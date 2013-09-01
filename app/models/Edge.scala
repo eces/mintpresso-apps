@@ -244,4 +244,40 @@ SET SQL_SAFE_UPDATES=1;
       ).execute()
     }
   }
+
+  val dates = List("created", "updated")
+
+  def orderBy(newest: Option[String], oldest: Option[String]): String = {
+    var orderBy = ""
+    (newest, oldest) match {
+      case (Some(a), _) if dates.contains(a) =>
+        orderBy = s"ORDER BY `${a}` desc"
+      case (None, Some(b)) if dates.contains(b) =>
+        orderBy = s"ORDER BY `${b}` asc"
+      case (None, None) =>
+        orderBy = "ORDER BY `updated` desc"
+      case (_, _) =>
+        // warn
+        orderBy = "ORDER BY `updated` desc"
+    }
+    orderBy
+  }
+
+  def limitBy(offset: Option[Long], limit: Option[Long]): String = {
+    var slice = ""
+    (offset, limit) match {
+      case (Some(a: Long), Some(b: Long)) if (a >= 0 && b >= 1) =>
+        slice = s"LIMIT ${a}, ${b}"
+      case (Some(a: Long), _) if (a >= 0) =>
+        slice = s"LIMIT ${a}, 100"
+      case (_, Some(b: Long)) if (b >= 1) =>
+        slice = s"LIMIT 0, ${b}"
+      case (None, None) =>
+        slice = "LIMIT 0, 100"
+      case (_, _) =>
+        // warn
+        slice = "LIMIT 0, 100"
+    }
+    slice
+  }
 }
