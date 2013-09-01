@@ -253,10 +253,10 @@ object Edges extends Controller with Secured with TypeConversion {
   def delete(no: Long) = Signed("delete_status") { implicit request => implicit user =>
     if(Edge.deleteByNo(no)){
       // debug
-      NoContent
+      Accepted
     }else{
       // info
-      NotFound
+      NoContent
     }
   }
 }

@@ -121,10 +121,10 @@ object Nodes extends Controller with Secured {
   def delete(typeName: String, nodeNo: Long) = Signed("delete_model") { implicit request => implicit user =>
     if(Node.delete(nodeNo)){
       // debug
-      NoContent
+      Accepted
     }else{
       // info
-      NotFound
+      NoContent
     }
   }
 }
