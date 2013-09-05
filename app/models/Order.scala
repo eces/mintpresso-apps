@@ -16,18 +16,21 @@ import scala.concurrent.duration._
 import actors._
 
 case class Order(var no: Long, var title: String, var state: String,
-  var json: JsObject,
-  var createdAt: Date, var updatedAt: Date, var referencedAt: Date) {
+  var dataType: String, var dataQuery: String,
+  var plans: List[JsObject], var duration: String,
+  var createdAt: Date, var updatedAt: Date) {
 
   def toJson: JsObject = {
     Json.obj(
       "$no"         -> this.no,
       "title"       -> this.title,
       "state"       -> this.state,
-      "json"        -> this.json,
-      "$createdAt"  -> this.createdAt,
-      "$updatedAt"  -> this.updatedAt,
-      "$referencedAt" -> this.referencedAt
+      "dataType"    -> this.dataType,
+      "dataQuery"   -> this.dataQuery,
+      "plans"       -> this.plans,
+      "duration"    -> this.duration,
+      "$createdAt"    -> this.createdAt,
+      "$updatedAt"    -> this.updatedAt
     )
   }
 
@@ -63,57 +66,104 @@ case class Order(var no: Long, var title: String, var state: String,
     this.state = "running"
     this.save match {
       case Some(_) => 
-        Cache.remove(s"order ${this.no} state")
+        Cache.set(s"order ${this.no} state", "running")
         true
-      case None => false
+      case None =>
+        Cache.remove(s"order ${this.no} state")
+        false
     }
   }
 
-  def prepare(implicit user: User) = {
+  def prepare(user: User): Boolean = {
     // set timestamp
     val timestamp = new Date().getTime
-    val duration = Duration((this.json \ "schedule").as[String])
+    val duration = Duration(this.duration)
 
     // start immediately if it was paused.
     val updatedAt = Cache.getAs[Long](s"order ${this.no} updatedAt").getOrElse(0L)
+    
+    // do something only if scheduled interval is over
+    if((updatedAt + duration.toSeconds) > timestamp){
+      return true
+    }
+
+    Logger.debug("Prepare")
     Cache.getAs[String](s"order ${this.no} state").getOrElse(this.state) match {
       case "paused" | "running" => {
-        // do something if scheduled interval is over
-        if((updatedAt + duration.toSeconds) <= timestamp){
-          // load plan
-          (this.json \ "plan").as[String] match {
-            // match procedure
-            case "NodeCount" => {
-              val typeNo = Type((this.json \ "nodeType").as[String]).no
+        // branch by data types
+        dataType match {
+          case "status" => {
+            // fetch plans
+            plans.foreach { plan =>
+              val key = (plan \ "key").as[String]
+              var value = (plan \ "value").as[String]
+              key match {
+                case "count" =>
+                  val parts = dataQuery.split(' ')
+                  if(parts.length != 3){
+                    // error
+                    return false
+                  }else{
+                    val sTypeNo = Type(parts(0)).no
+                    val v = parts(1)
+                    val oTypeNo = Type(parts(2)).no
 
-              // send scheduled message on Akka to OrderActor.
-              Actors.order ! NodeCount(typeNo, "order ${this.no}", user.no, timestamp)
+                    // val AlphabetPattern = "([a-z0-9]+)".r
+                    // var jsonMatcher = false
+                    // transform value to query
+                    // value match {
+                    //   case "$no" =>
+                    //     value = "no"
+                    //   case Json.parse(v) =>
+                    //     value = s"\"${v}\":"
+                    //     jsonMatcher = true
+                    //   case _ => 
+                    //     // info
+                    //     value = "no"
+                    // }
+                    var column = ""
+                    var groupBy = ""
+                    value match {
+                      case "s" =>
+                        // column = "`s` as `key`,"
+                        // groupBy = "GROUP BY `s`"
+                      case "o" => 
+                        // column = "`o` as `key`,"
+                        // groupBy = "GROUP BY `o`"
+                      case "v" => 
+                      case _ => 
+                        // error
+                        return false
+                    }
 
-              // set hook for resource (rpush)
-              this.addCallback(s"${user.no} node typeNo:${typeNo}")
+                    // change state
+                    this.prepare
+
+                    Actors.order ! EdgeCountWithTypesAndVerb(
+                      sTypeNo, oTypeNo, v, value, s"order ${this.no}", user.no, timestamp)
+                    // if(jsonMatcher){
+                    //   Actors.order ! EdgeCountWithTypesAndVerbAndJson(sTypeNo, oTypeNo, v, value, s"order ${this.no}", user.no, timestamp)
+                    // }else{
+                    // }
+                    this.addCallback(s"${user.no} edge v:${v}")
+                    return true
+                  }
+                case _ => 
+                  // error 
+              }
             }
-            // case "NodeCountWithJson" => {
-            //   val typeNo = Type((this.json \ "nodeType").as[String]).no
-            //   val condition = (this.json \ "condition").as[String]
-            //   Actors.order ! NodeCount(typeNo, condition, "order ${this.no}", user.no, timestamp)
-            // }
-            case "EdgeCountWithTypesAndVerb" => {
-              val sTypeNo = Type((this.json \ "sType").as[String]).no
-              val oTypeNo = Type((this.json \ "oType").as[String]).no
-              val v = (this.json \ "sType").as[String]
-              Actors.order ! EdgeCountWithTypesAndVerb(sTypeNo, oTypeNo, v, "order ${this.no}", user.no, timestamp)
-              // this.addCallback(s"${user.no} edge sTypeNo:${sTypeNo} oTypeNo:${oTypeNo}")
-              this.addCallback(s"${user.no} edge v:${v}")
-            }
-            case _ => {
-              // error
-            }
+            true
           }
+          case "model" => false
+          case _ => {
+            // error
+            false
+          } 
         }
       }
-
       // already in progress so let's drop it.
-      case "hold" =>
+      case "hold" => true
+      case _ => false
     }
   }
 
@@ -137,10 +187,12 @@ object Order {
       (key \ "$no").as[Long],
       (key \ "title").as[String],
       (key \ "state").as[String],
-      (key \ "json").as[JsObject],
+      (key \ "dataType").as[String],
+      (key \ "dataQuery").as[String],
+      (key \ "plans").as[List[JsObject]],
+      (key \ "duration").as[String],
       (key \ "$createdAt").as[Date],
-      (key \ "$updatedAt").as[Date],
-      (key \ "$referencedAt").as[Date]
+      (key \ "$updatedAt").as[Date]
     )
   }
 

@@ -60,7 +60,7 @@ object Global extends GlobalSettings {
           }
         }
 
-      val key = new Key("", 0L, List("*"), List(""), List("read_model", "search_model", "create_model", "update_model", "delete_model", "search_status", "create_status", "delete_status", "manage_order", "manage_pickup"))
+      val key = new Key("", 0L, List("*"), List(""), List("read_model", "search_model", "create_model", "update_model", "delete_model", "search_status", "create_status", "delete_status", "manage_order", "manage_pickup", "read_type", "read_verb"))
         val node2 = Node( key.toTypedJson )
         node2.no = 2
         node2.ownerNo = 1

@@ -16,22 +16,33 @@ import scala.concurrent.duration._
 import models._
 
 case class Webhook(url: String, method: String, json: Boolean, key: String, orderKey: String, timestamp: Long)
+case class StatusCreateWithTypesAndVerb(sTypeNo: Long, oTypeNo: Long, v: String, edgeJson: String, pickupKey: String, orderKey: String, userNo: Long, timestamp: Long)
 // PushNotification (long polling)
 
 class PickupActor extends Actor {
   def receive = {
 
-    case Webhook(url, method, json, key, orderKey, timestamp) => {
-      val oldState = Cache.getAs[String](s"${key} state").getOrElse("paused")
-      Cache.set(s"${key} state", "hold")
+    case StatusCreateWithTypesAndVerb(sTypeNo, oTypeNo, v, edgeJson, pickupKey, orderKey, userNo, timestamp) => {
+      // val oldState = Cache.getAs[String](s"${pickupKey} state").getOrElse("paused")
+      // Cache.set(s"${pickupKey} state", "hold")
 
-      if(json){
-        Cache.getAs[String](s"${orderKey} json").getOrElse(Json.obj("message" -> "pickup.cache.empty"))
-      }else{
-        Cache.getAs[String](s"${orderKey} raw").getOrElse("pickup.cache.empty")
-      }
+      // val value: String = Cache.getAs[String](s"${orderKey} raw").getOrElse("null")
+      // edgeJson.replace("$value", value)
 
-      Cache.set(s"${key} state", oldState)
+      // try { 
+      //   val j = Json.parse(edgeJson)
+      //   // Edge( 0L, userNo, sTypeNo, "issue", Node.findOneByNo(key.no).get).save
+      //   Logger.info("NotImplemented - StatusCreateWithTypesAndVerb")
+      //   // ...
+      // } catch {
+      //   case e: Exception => 
+      //     // error
+      //     // pause
+      // }
+      
+
+      // Cache.set(s"${pickupKey} state", oldState)
+      
     }
 
     case _ => 

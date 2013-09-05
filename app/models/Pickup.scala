@@ -16,8 +16,8 @@ import scala.concurrent.duration._
 import actors._
 
 case class Pickup(var no: Long, var id: String, var title: String, var state: String,
-  var json: JsObject,
-  var createdAt: Date, var updatedAt: Date, var referencedAt: Date) {
+  var resultType: String, var resultQuery: JsObject,
+  var createdAt: Date, var updatedAt: Date) {
 
   def toJson: JsObject = {
     Json.obj(
@@ -25,10 +25,10 @@ case class Pickup(var no: Long, var id: String, var title: String, var state: St
       "$id"         -> this.id,
       "title"       -> this.title,
       "state"       -> this.state,
-      "json"        -> this.json,
+      "resultType"  -> this.resultType,
+      "resultQuery" -> this.resultQuery,
       "$createdAt"  -> this.createdAt,
-      "$updatedAt"  -> this.updatedAt,
-      "$referencedAt" -> this.referencedAt
+      "$updatedAt"  -> this.updatedAt
     )
   }
 
@@ -60,30 +60,39 @@ case class Pickup(var no: Long, var id: String, var title: String, var state: St
     }
   }
 
-  def prepare(orderKey: String) = {
+  def prepare(orderKey: String)(user: User) = {
     // set timestamp
     val timestamp = new Date().getTime
-    val duration = Duration((this.json \ "schedule").as[String])
+    val duration = Duration("10 seconds")
 
     // start immediately if it was paused.
     val updatedAt = Cache.getAs[Long](s"pickup ${this.no} updatedAt").getOrElse(0L)
     Cache.getAs[String](s"pickup ${this.no} state").getOrElse(this.state) match {
       case "paused" | "running" => {
-        // do something if scheduled interval is over
+        // do something only if scheduled interval is over
         if((updatedAt + duration.toSeconds) <= timestamp){
           // load plan
-          (this.json \ "plan").as[String] match {
-            // match procedure
-            case "Webhook" => {
-              val url = (this.json \ "url").as[String]
-              val method = (this.json \ "method").as[String]
-              val json = (this.json \ "json").as[Boolean]
-              // send scheduled message to PickupActor.
-              Actors.pickup ! Webhook(url, method, json, s"pickup ${this.no}", orderKey, timestamp)
-            }
-            case _ => 
-              // error
-          }
+          // resultType match {
+          //   case "status-create" =>
+          //     val parts = (resultQuery \ "format").as[String].split(' ')
+          //     if(parts.length != 3){
+          //       // error
+          //       false
+          //     }else{
+          //       user no listen music
+          //       music 
+          //       val sTypeNo = Type(parts(0)).no
+          //       val oTypeNo = Type(parts(2)).no
+          //       val jsonParts = parts(1).split(':')
+          //       val v = jsonParts(0)
+          //       val edgeJson = jsonParts(1)
+          //     }
+          //     Actors.pickup ! StatusCreateEachWithVerbAndJson(
+          //       v, edgeJson, s"pickup ${this.no}", orderKey, user.no, timestamp)
+              
+            // case _ =>
+            //   // error
+          // }
         }
       }
 
@@ -113,10 +122,10 @@ object Pickup {
       (key \ "$id").as[String],
       (key \ "title").as[String],
       (key \ "state").as[String],
-      (key \ "json").as[JsObject],
+      (key \ "resultType").as[String],
+      (key \ "resultQuery").asOpt[JsObject].getOrElse(Json.obj()),
       (key \ "$createdAt").as[Date],
-      (key \ "$updatedAt").as[Date],
-      (key \ "$referencedAt").as[Date]
+      (key \ "$updatedAt").as[Date]
     )
   }
 

@@ -280,4 +280,59 @@ SET SQL_SAFE_UPDATES=1;
     }
     slice
   }
+
+  def countAllByGroup(sTypeNo: Long, v: String, oTypeNo: Long, column: String)(implicit user: User = User.Default): List[(Long, Long)] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+s"""
+SELECT `${column}`, COUNT(`no`) as `count`
+FROM `edges`
+WHERE `sType` = {sType}
+  AND `v` = {v}
+  AND `oType` = {oType}
+  AND `owner` = {ownerNo}
+GROUP BY `${column}`
+"""
+      ).on(
+        'sType -> sTypeNo,
+        'v -> v,
+        'oType -> oTypeNo,
+        'ownerNo -> user.no
+      ).as( long("edges."+column) ~ long("count") map(flatten) * )
+    }
+  }
+
+  def countAllByTypesAndVerb(sTypeNo: Long, v: String, oTypeNo: Long)(implicit user: User = User.Default): Long = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SELECT COUNT(`no`) as `count`
+FROM `edges`
+WHERE `sType` = {sType}
+  AND `v` = {v}
+  AND `oType` = {oType}
+  AND `owner` = {ownerNo}
+"""
+      ).on(
+        'sType -> sTypeNo,
+        'v -> v,
+        'oType -> oTypeNo,
+        'ownerNo -> user.no
+      ).as(scalar[Long].single)
+    }
+  }
+
+  def findVerbsByOwnerNo(user: User): List[String] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SELECT DISTINCT `v`
+FROM `edges`
+WHERE `owner` = {ownerNo}
+"""
+      ).on( 'ownerNo -> user.no )().map { row =>
+        row[String]("v")
+      }.toList
+    } 
+  }
 }

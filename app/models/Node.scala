@@ -138,8 +138,8 @@ object Node {
     get[Date]("updated")~ 
     get[Date]("referenced")~ 
     get[String]("json") map {
-      case no~ownerNo~id~typeNo~typeName~createdAt~updatedAt~referencedAt~json => {
-        new Node(id, no.get, ownerNo, typeNo, typeName, Json.parse(json).as[JsObject], createdAt, updatedAt, referencedAt)
+      case no~ownerNo~id~typeNo~typeName~createdAt~updatedAt~referencedAt~j => {
+        new Node(id, no.get, ownerNo, typeNo, typeName, Json.parse(j).as[JsObject], createdAt, updatedAt, referencedAt)
       }
     }
   }
@@ -343,5 +343,20 @@ LIMIT 1
         slice = "LIMIT 0, 100"
     }
     slice
+  }
+
+  def findTypesByOwnerNo(user: User): List[(Long, String)] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SELECT DISTINCT `types`.`no`, `types`.`name`
+FROM `nodes`, `types`
+WHERE `nodes`.`owner` = {ownerNo}
+  AND `nodes`.`type` = `types`.`no`
+"""
+      ).on( 'ownerNo -> user.no )().map { row =>
+        row[Long]("types.no") -> row[String]("types.name")
+      }.toList
+    } 
   }
 }

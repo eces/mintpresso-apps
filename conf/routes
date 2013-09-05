@@ -3,6 +3,19 @@ GET     /                         controllers.Application.index
 # API version 2 authentication
 GET     /authorize                controllers.Application.authorize
 
+GET     /order/:no/prepare       controllers.v2.Orders.prepare(no: Long)
+GET     /order/:no/cancel        controllers.v2.Orders.cancel(no: Long)
+GET     /pickup/:no/prepare      controllers.v2.Pickups.prepare(no: Long)
+GET     /pickup/:no/cancel       controllers.v2.Pickups.cancel(no: Long)
+GET     /private/:no.json        controllers.v2.Pickups.findOneByNo(no: Long)
+#GET     /private/:no.xml         controllers.v2.Pickups.findOneByNo(no: Long)
+GET     /public/:id.json         controllers.v2.Pickups.findOneById(id: String)
+#GET     /public/:id.xml          controllers.v2.Pickups.findOneById(id: String)
+
+# Internal API
+GET     /types/:ownerNo           controllers.Application.findTypesByOwnerNo(ownerNo: Long)
+GET     /verbs/:ownerNo           controllers.Application.findVerbsByOwnerNo(ownerNo: Long)
+
 # Status(edge) API version 2
 GET     /:sT/:v/:oT               controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String])
 GET     /:sT/$sNo<[0-9]+>/:v/:oT  controllers.v2.Edges.findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String)
@@ -23,15 +36,6 @@ GET     /:typeName/:nodeId       controllers.v2.Nodes.findOneById(typeName: Stri
 POST    /:typeName               controllers.v2.Nodes.add(typeName: String)
 PUT     /:typeName/:nodeNo       controllers.v2.Nodes.addWithJson(typeName: String, nodeNo: Long)
 DELETE  /:typeName/:nodeNo       controllers.v2.Nodes.delete(typeName: String, nodeNo: Long)
-
-GET     /order/:no/prepare       controllers.v2.Orders.prepare(no: Long)
-GET     /order/:no/cancel        controllers.v2.Orders.cancel(no: Long)
-GET     /pickup/:no/prepare      controllers.v2.Pickups.prepare(no: Long)
-GET     /pickup/:no/cancel       controllers.v2.Pickups.cancel(no: Long)
-GET     /private/:no.json        controllers.v2.Pickups.findOneByNo(no: Long)
-#GET     /private/:no.xml         controllers.v2.Pickups.findOneByNo(no: Long)
-GET     /public/:id.json         controllers.v2.Pickups.findOneById(id: String)
-#GET     /public/:id.xml          controllers.v2.Pickups.findOneById(id: String)
 
 # /private/21304.json
 # /public/canxan-users.json

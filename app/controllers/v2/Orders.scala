@@ -12,7 +12,7 @@ object Orders extends Controller with Secured {
   def prepare(no: Long) = Signed("manage_order") { implicit request => implicit user =>
     Node.findOneByNo(no) match {
       case Some(node) => 
-        if(Order(node.toTypedJson).prepare){
+        if(Order(node.toTypedJson).prepare(user)){
           Accepted
         }else{
           Ok
