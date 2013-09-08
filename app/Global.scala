@@ -78,6 +78,24 @@ object Global extends GlobalSettings {
 
       }
     }
+
+    import actors._
+    Edge.findAllByTypes(Type("user").no, "request", Type("order").no).foreach { orderReq =>
+      val user = User(orderReq.s.toTypedJson)
+      val order = Order(orderReq.o.toTypedJson)
+      val orderKey = s"order ${order.no}"
+      if(order.state != "paused"){
+        Edge.findAllBySubjectAndTypeNo(orderReq.o, "callback", Type("pickup").no).foreach { pickupReq =>
+          val pickup = Pickup(pickupReq.o.toTypedJson)
+          if(pickup.state != "paused"){
+            // prepare pickups
+            Actors.pickup ! PickupCallback(pickup, orderKey, user)
+          }
+        }
+        // prepare orders
+        Actors.order ! OrderCallback(order, user)
+      }
+    }
   }  
   
   override def onStop(app: Application) {
