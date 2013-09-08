@@ -270,18 +270,18 @@ LIMIT 1
   // find nodes with full text search in json string.
   // no $keyword is allowed, multiple keys are support, partial match (LIKE) doesn't support.
   // it has and/or issue.
-  def findAllByTypeNoAndJson(typeNo: Long, json: String)(implicit user: User): List[Node] = {
+  def findAllByTypeNoAndJson(typeNo: Long, json: String, orderBy: String = "", limit: String = "")(implicit user: User): List[Node] = {
     DB.withConnection { implicit conn =>
       SQL(
-  """
+  s"""
   SELECT *
   FROM `nodes`, `types`
   WHERE `json` LIKE {json}
     AND `owner` = {ownerNo}
     AND `nodes`.`type` = {typeNo}
     AND `types`.`no` = {typeNo}
-  ORDER BY `updated` DESC
-  LIMIT 1
+  ${orderBy}
+  ${limit}
   """
       ).on( 'json -> json, 
             'ownerNo -> user.no,
