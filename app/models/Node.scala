@@ -125,6 +125,26 @@ LIMIT 1
       ).execute()
     }
   }
+
+  def callback(implicit user: User) = {
+    import play.api.cache._
+    import actors._
+    
+    // node typeNo:?
+    Logger.debug(s"${user.no} node typeNo:${this.typeNo} callback order = ?")
+    Cache.getAs[String](s"${user.no} node typeNo:${this.typeNo} callback order") match {
+      case Some(s: String) => 
+        Logger.debug(s"${user.no} node typeNo:${this.typeNo} callback order = ${s}")
+        s.split(',').foreach { orderNo =>
+          Node.findOneByNo(orderNo.toLong) map { order =>
+            Actors.order ! OrderCallback( Order(order.toTypedJson), user)
+          } getOrElse {
+            // warn
+          }
+        }
+      case None =>
+    }
+  }
 }
 
 object Node {
@@ -164,7 +184,7 @@ object Node {
     Node(id, no, 0L, typeNo, typeName, n, d, d, d)
   }
 
-  def empty(no: Long, typeNo: Long) = {
+  def Empty(no: Long, typeNo: Long) = {
     val d = new Date
     new Node("", no, 0, typeNo, Type(typeNo).name, Json.obj(), d, d, d)
   }
@@ -226,6 +246,24 @@ LIMIT 1
             'ownerNo -> user.no,
             'typeNo -> typeNo
       ).singleOpt(parser)
+    }
+  }
+
+  // internal use only !
+  def findAllByTypeNo(typeNo: Long)(implicit user: User): List[Node] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+  """
+  SELECT *
+  FROM `nodes`, `types`
+  WHERE `owner` = {ownerNo}
+    AND `nodes`.`type` = {typeNo}
+    AND `types`.`no` = {typeNo}
+  ORDER BY `updated` DESC
+  """
+      ).on( 'ownerNo -> user.no,
+            'typeNo -> typeNo
+      ).as(parser *)
     }
   }
 

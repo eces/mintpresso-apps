@@ -65,6 +65,26 @@ LIMIT 1
       ).execute()
     }
   }
+
+  def callback(implicit user: User) = {
+    import play.api.cache._
+    import actors._
+    
+    // verb
+    Logger.debug(s"${user.no} edge v:${this.v} callback order = ?")
+    Cache.getAs[String](s"${user.no} edge v:${this.v} callback order") match {
+      case Some(s: String) => 
+        Logger.debug(s"${user.no} edge v:${this.v} callback order = ${s}")
+        s.split(',').foreach { orderNo =>
+          Node.findOneByNo(orderNo.toLong) map { order =>
+            Actors.order ! OrderCallback( Order(order.toTypedJson), user)
+          } getOrElse {
+            // warn
+          }
+        }
+      case None =>
+    }
+  }
 }
 
 object Edge {
@@ -99,6 +119,23 @@ object Edge {
       case no~ownerNo~sNo~sT~v~oNo~oT~json~createdAt~updatedAt => {
         new Edge(no.get, ownerNo, s, v, o, Json.parse(json).as[JsObject], createdAt, updatedAt)
       }
+    }
+  }
+
+  def findOneByNo(no: Long)(implicit user: User = User.Default): Option[Edge] = {
+    DB.withConnection { implicit conn =>
+      SQL(
+"""
+SELECT *
+FROM `edges`
+WHERE `owner` = {ownerNo}
+  AND `no` = {no}
+ORDER BY `updated` DESC
+LIMIT 1
+"""
+      ).on( 'ownerNo -> user.no, 
+            'no -> no
+      ).singleOpt(parser)
     }
   }
 
