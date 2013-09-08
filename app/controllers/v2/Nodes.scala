@@ -2,7 +2,6 @@ package controllers.v2
 
 import play.api._
 import play.api.mvc._
-import play.api.cache._
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.json.Json._
@@ -87,15 +86,7 @@ object Nodes extends Controller with Secured {
             node.ownerNo = user.no
             node.save match {
               case Some(no: Long) => {
-                // respond callback
-                Cache.getAs[Set[Long]](s"${user.no} node typeNo:${node.typeNo}") match {
-                  case Some(list: Set[Long]) => {
-                    list.foreach { orderNo =>
-                      Order(Node.findOneByNo(orderNo).get.toTypedJson).prepare(user)
-                    }
-                  }
-                  case None =>
-                }
+                node.callback
                 // debug
                 Callback(Results.Created, Node.findOneByNo(no).get.toTypedJson)
               }
@@ -117,16 +108,10 @@ object Nodes extends Controller with Secured {
           n.updatedAt = new Date
           n.id = node.id
           n.json = node.json
-          n.save
           // respond callback
-          Cache.getAs[Set[Long]](s"${user.no} node typeNo:${node.typeNo}") match {
-            case Some(list: Set[Long]) => {
-              list.foreach { orderNo =>
-                Order(Node.findOneByNo(orderNo).get.toTypedJson).prepare(user)
-              }
-            }
-            case None =>
-          }
+          n.save
+          n.callback
+          
           // debug: make sure GIGO for test case
           Callback(Results.Created, Node.findOneByNo(n.no).get.toTypedJson)
         } getOrElse {

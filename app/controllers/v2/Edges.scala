@@ -8,6 +8,7 @@ import play.api.libs.json._
 import play.api.libs.json.Json._
 import controllers._
 import models.{Node, Edge, Type, Order}
+import actors._
 
 object Edges extends Controller with Secured with TypeConversion {
   def findAllByTypes(sT: String, v: String, oT: String, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String]) = Signed("search_status") { implicit request => implicit user =>
@@ -192,16 +193,9 @@ object Edges extends Controller with Secured with TypeConversion {
         e.save match {
           case Some(no: Long) => {
             // respond callback
-            Cache.getAs[Set[Long]](s"${user.no} edge v:${e.v}") match {
-              case Some(list: Set[Long]) => {
-                list.foreach { orderNo =>
-                  Order(Node.findOneByNo(orderNo).get.toTypedJson).prepare(user)
-                }
-              }
-              case None =>
-            }
+            e.callback
             // debug
-            Callback(Results.Created, Node.findOneByNo(no).get.toTypedJson)
+            Callback(Results.Created, Edge.findOneByNo(no).get.toJson)
           }
           case None => {
             // error: failed to add new status
