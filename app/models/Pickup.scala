@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 import actors._
 
 case class Pickup(var no: Long, var title: String, var state: String,
-  var resultType: String, var resultQuery: JsObject,
+  var resultType: String, var resultQuery: String,
   var plans: List[JsObject], var orderNo: Long,
   var createdAt: Date, var updatedAt: Date) {
 
@@ -109,9 +109,39 @@ case class Pickup(var no: Long, var title: String, var state: String,
                   } catch {
                     case e: Exception => 
                       // warn
-                      value = "$value"
+                      value = "value"
                   }
                   Actors.pickup ! ModelUpdateJsonWithKey(value, pickupKey, orderKey, user.no, timestamp)
+                  addCallback(orderKey)
+                case _ => 
+              }
+            }
+            true
+          }
+          case "status" => {
+            // fetch plans
+            plans.foreach { plan =>
+              val key = (plan \ "key").as[String]
+              var value = (plan \ "value").asOpt[String].getOrElse("")
+              key match {
+                case "add" =>
+                  try { 
+                    if(value.length == 0){
+                      value = "value"
+                    }
+                    val json = Json.parse("\"" + value + "\"")
+                  } catch {
+                    case e: Exception => 
+                      // warn
+                      value = "value"
+                  }
+                  val parts = resultQuery.split(' ')
+                  if(parts.length != 3){
+                    Logger.error("parts.length")
+                    return false
+                  }
+                  Actors.pickup ! StatusCreateForEach(value, parts(1), pickupKey, orderKey, user.no, timestamp)
+                  // Actors.pickup ! ModelUpdateJsonWithKey(value, pickupKey, orderKey, user.no, timestamp)
                   addCallback(orderKey)
                 case _ => 
               }
@@ -149,7 +179,7 @@ object Pickup {
       (key \ "title").as[String],
       (key \ "state").as[String],
       (key \ "resultType").as[String],
-      (key \ "resultQuery").asOpt[JsObject].getOrElse(Json.obj()),
+      (key \ "resultQuery").asOpt[String].getOrElse(""),
       (key \ "plans").as[List[JsObject]],
       (key \ "orderNo").as[Long],
       (key \ "$createdAt").as[Date],

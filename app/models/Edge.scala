@@ -318,11 +318,11 @@ SET SQL_SAFE_UPDATES=1;
     slice
   }
 
-  def countAllByGroup(sTypeNo: Long, v: String, oTypeNo: Long, column: String)(implicit user: User = User.Default): List[(Long, Long)] = {
+  def countAllByGroup(sTypeNo: Long, v: String, oTypeNo: Long, column: String)(implicit user: User = User.Default): List[(Long, Long, Long)] = {
     DB.withConnection { implicit conn =>
       SQL(
 s"""
-SELECT `${column}`, COUNT(`no`) as `count`
+SELECT `s`, `o`, COUNT(`no`) as `count`
 FROM `edges`
 WHERE `sType` = {sType}
   AND `v` = {v}
@@ -335,7 +335,7 @@ GROUP BY `${column}`
         'v -> v,
         'oType -> oTypeNo,
         'ownerNo -> user.no
-      ).as( long("edges."+column) ~ long("count") map(flatten) * )
+      ).as( long("edges.s") ~ long("count") ~ long("edges.o") map(flatten) * )
     }
   }
 

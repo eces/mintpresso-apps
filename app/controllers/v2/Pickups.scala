@@ -55,6 +55,7 @@ object Pickups extends Controller with Secured {
         if(p.prepare(s"order ${p.orderNo}")(user)){
           Accepted
         }else{
+          p.cancel
           Ok
         }
       case None =>

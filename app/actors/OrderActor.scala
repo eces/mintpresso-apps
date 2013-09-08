@@ -62,26 +62,58 @@ class OrderActor extends Actor {
       Cache.set(s"${orderKey} state", "hold")
 
       implicit val user = User.Empty(userNo)
-      var json: JsValue = null
+      var list: JsValue = null
+      var kv: JsValue = null
+      var single: JsValue = null
 
       column match {
         case "s" | "o" =>
-          json = Edge.countAllByGroup(sTypeNo, v, oTypeNo, column).foldLeft(Json.arr()){ (a, b: (Long, Long)) =>
+          val res = Edge.countAllByGroup(sTypeNo, v, oTypeNo, column)
+          list = res.foldLeft(Json.arr()){ (a, b: (Long, Long, Long)) =>
             a.append(Json.obj(
-              "key" -> b._1,
-              "value" -> b._2
+              "$subject" -> b._1,
+              "value" -> b._2,
+              "$object" -> b._3
             ))
           }
+          kv = res.foldLeft(Json.arr()){ (a, b: (Long, Long, Long)) =>
+            if(column == "s"){
+              a.append(Json.obj(
+                "key" -> b._1,
+                "value" -> b._2
+              ))
+            }else if(column == "o"){
+              a.append(Json.obj(
+                "key" -> b._3,
+                "value" -> b._2
+              ))
+            }else{
+              a.append(Json.obj(
+                "key" -> 0,
+                "value" -> b._2
+              ))
+            }
+          }
         case "v" =>
-          json = Json.obj( "value" -> Edge.countAllByTypesAndVerb(sTypeNo, v, oTypeNo) )
+          single = Json.obj("value" -> Edge.countAllByTypesAndVerb(sTypeNo, v, oTypeNo))
       }
 
       // put RDD or raw data
-      // Cache.set(s"${orderKey} raw", count)
-      Cache.set(s"${orderKey} json", json.toString )
+      if(list != null){
+        Cache.set(s"${orderKey} json-list", list.toString )
+        Logger.debug(s"${orderKey} json-list = ${list.toString}")
+      }
+      if(kv != null){
+        Cache.set(s"${orderKey} json-kv", kv.toString )
+        Logger.debug(s"${orderKey} json-kv = ${kv.toString}")
+      }
+      if(single != null){
+        Cache.set(s"${orderKey} json-single", single.toString )
+        Logger.debug(s"${orderKey} json-single = ${single.toString}")
+      }
+
       Cache.set(s"${orderKey} state", oldState)
 
-      Logger.debug(s"${orderKey} json = ${json.toString}")
       
       // edge get, fetch
       Logger.debug(s"${orderKey} callback pickup = ?")
