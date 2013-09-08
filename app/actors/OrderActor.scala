@@ -19,6 +19,7 @@ case class NodeCount(typeNo: Long, key: String, no: Long, timestamp: Long)
 // case class NodeCount(typeNo: Long, condition: String, key: String, no: Long, timestamp: Long)
 // case class EdgeCountWithTypesAndVerbAndJson(sTypeNo: Long, oTypeNo: Long, v: String, column: String, groupBy: String, cacheKey: String, userNo: Long, timestamp: Long)
 case class EdgeCountWithTypesAndVerb(sTypeNo: Long, oTypeNo: Long, v: String, value: String, cacheKey: String, userNo: Long, timestamp: Long)
+case class OrderCallback(order: Order, user: User)
 // case class RowCount
 // case class Rank
 // case class Clean
@@ -28,6 +29,11 @@ case class EdgeCountWithTypesAndVerb(sTypeNo: Long, oTypeNo: Long, v: String, va
 
 class OrderActor extends Actor {
   def receive = {
+
+    case OrderCallback(order, user) => {
+      Logger.debug("Order Callback - " + order.no)
+      order.prepare(user)
+    } 
 
     case NodeCount(typeNo, key, no, timestamp) => {
       // val oldState = Cache.getAs[String](s"${key} state").getOrElse("paused")
@@ -77,14 +83,20 @@ class OrderActor extends Actor {
 
       Logger.debug(s"${orderKey} json = ${json.toString}")
       
-      Cache.getAs[Long](s"${orderKey} callback pickup") map { nodeNo =>
-        Node.findOneByNo(nodeNo) match {
-          case Some(node) => 
-            // pass empty user implicitly
-            Pickup(node.toTypedJson).prepare(orderKey)(User.Empty(userNo))
-          case None =>
-            // warn
-        }
+      // edge get, fetch
+      Logger.debug(s"${orderKey} callback pickup = ?")
+      Cache.getAs[String](s"${orderKey} callback pickup") match {
+        case Some(s: String) => 
+          Logger.debug(s"${orderKey} callback pickup = ${s}")
+          s.split(',').foreach { pickupNo =>
+            Node.findOneByNo(pickupNo.toLong) map { pickup =>
+              // pass empty user explicitly
+              Actors.pickup ! PickupCallback( Pickup(pickup.toTypedJson), orderKey, User.Empty(userNo))
+            } getOrElse {
+              // warn
+            }
+          }
+        case None =>
       }
       // it can be there's no pickup for this order.
     }

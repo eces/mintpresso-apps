@@ -23,6 +23,7 @@ case class Order(var no: Long, var title: String, var state: String,
   def toJson: JsObject = {
     Json.obj(
       "$no"         -> this.no,
+      "$id"         -> "",
       "title"       -> this.title,
       "state"       -> this.state,
       "dataType"    -> this.dataType,
@@ -53,12 +54,15 @@ case class Order(var no: Long, var title: String, var state: String,
 
   def addCallback(key: String) = {
     // set hook for resource (rpush)
-    var newSet: Set[Long] = Set(this.no)
-    Cache.getAs[Set[Long]](s"${key} callback order") match {
-      case Some(s: Set[Long]) => newSet ++= s
+    var callbacks: String = ""
+    Cache.getAs[String](s"${key} callback order") match {
+      case Some(s: String) => 
+        callbacks = (s.split(','):+this.no.toString).toSet.mkString(",")
       case None =>
+        callbacks = this.no.toString
     }
-    Cache.set(s"${key} callback order", newSet)
+    Cache.set(s"${key} callback order", callbacks)
+    Logger.debug(s"${key} callback order := ${callbacks.toString}")
   }
 
   def prepare: Boolean = {
@@ -78,9 +82,10 @@ case class Order(var no: Long, var title: String, var state: String,
     // set timestamp
     val timestamp = new Date().getTime
     val duration = Duration(this.duration)
+    val orderKey = "order " + this.no
 
     // start immediately if it was paused.
-    val updatedAt = Cache.getAs[Long](s"order ${this.no} updatedAt").getOrElse(0L)
+    val updatedAt = Cache.getAs[Long](s"${orderKey} updatedAt").getOrElse(0L)
     
     // do something only if scheduled interval is over
     if((updatedAt + duration.toSeconds) > timestamp){
@@ -88,8 +93,8 @@ case class Order(var no: Long, var title: String, var state: String,
     }
 
     Logger.debug("Prepare")
-    Cache.getAs[String](s"order ${this.no} state").getOrElse(this.state) match {
-      case "paused" | "running" => {
+    Cache.getAs[String](s"${orderKey} state").getOrElse(this.state) match {
+      case "running" | "paused" => {
         // branch by data types
         dataType match {
           case "status" => {
@@ -145,7 +150,7 @@ case class Order(var no: Long, var title: String, var state: String,
                     //   Actors.order ! EdgeCountWithTypesAndVerbAndJson(sTypeNo, oTypeNo, v, value, s"order ${this.no}", user.no, timestamp)
                     // }else{
                     // }
-                    this.addCallback(s"${user.no} edge v:${v}")
+                    addCallback(s"${user.no} edge v:${v}")
                     return true
                   }
                 case _ => 
@@ -161,6 +166,7 @@ case class Order(var no: Long, var title: String, var state: String,
           } 
         }
       }
+
       // already in progress so let's drop it.
       case "hold" => true
       case _ => false
