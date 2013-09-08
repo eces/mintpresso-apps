@@ -17,10 +17,47 @@ import models._
 
 case class Webhook(url: String, method: String, json: Boolean, key: String, orderKey: String, timestamp: Long)
 case class StatusCreateWithTypesAndVerb(sTypeNo: Long, oTypeNo: Long, v: String, edgeJson: String, pickupKey: String, orderKey: String, userNo: Long, timestamp: Long)
+case class ModelUpdateJsonWithKey(jsonFieldName: String, pickupKey: String, orderKey: String, userNo: Long, timestamp: Long)
+case class PickupCallback(pickup: Pickup, orderKey: String, user: User)
 // PushNotification (long polling)
 
 class PickupActor extends Actor {
   def receive = {
+
+    case PickupCallback(pickup, orderKey, user) => {
+      Logger.debug("Pickup Callback - " + pickup.no)
+      pickup.prepare(orderKey)(user)
+    }
+
+    case ModelUpdateJsonWithKey(jsonFieldName, pickupKey, orderKey, userNo, timestamp) => {
+      val updatedAt = Cache.getAs[Long](s"${pickupKey} updatedAt").getOrElse(0L)
+      
+      // skip if pickup has been updated to newer result.
+      if(updatedAt > timestamp){
+        // info - report to app@mintpresso.com
+      }else{
+        Cache.getAs[String](s"${orderKey} json") match {
+          case Some(values) =>
+            Json.parse(values).as[List[JsObject]].foreach { kv =>
+              val key = (kv \ "key").as[Long]
+              val value = (kv \ "value").as[Long]
+              Node.findOneByNo(key) map { node =>
+                node.updatedAt = new java.util.Date
+                node.json = node.json ++ Json.obj( jsonFieldName -> value )
+                node.save
+
+                // respond callback
+                node.callback(User.Empty(userNo))
+
+              } getOrElse {
+                // error
+              }
+            }
+          case None =>
+            // warn
+        }
+      }
+    }
 
     case StatusCreateWithTypesAndVerb(sTypeNo, oTypeNo, v, edgeJson, pickupKey, orderKey, userNo, timestamp) => {
       // val oldState = Cache.getAs[String](s"${pickupKey} state").getOrElse("paused")

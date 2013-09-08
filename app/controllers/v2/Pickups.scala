@@ -15,7 +15,7 @@ object Pickups extends Controller with Secured {
   def findOneById(id: String) = Action { implicit request =>
     Node.findOneByTypeNoAndId(Type("pickup").no, id)(User.Default) match {
       case Some(node) => 
-        Edge.findAllByTypeNoAndObject(Type("order").no, "place", node) match {
+        Edge.findAllByTypeNoAndObject(Type("order").no, "respond", node) match {
           case first :: other => {
             val sNo = first.s.no
             Cache.getAs[String](s"order ${sNo} json") match {
@@ -33,7 +33,7 @@ object Pickups extends Controller with Secured {
   def findOneByNo(no: Long) = Signed("read_pickup") { implicit request => implicit user =>
     Node.findOneByNo(no) match {
       case Some(node) => 
-        Edge.findAllByTypeNoAndObject(Type("order").no, "place", node) match {
+        Edge.findAllByTypeNoAndObject(Type("order").no, "respond", node) match {
           case first :: other => {
             val sNo = first.s.no
             Cache.getAs[String](s"order ${sNo} json") match {
@@ -51,7 +51,8 @@ object Pickups extends Controller with Secured {
   def prepare(no: Long) = Signed("manage_pickup") { implicit request => implicit user =>
     Node.findOneByNo(no) match {
       case Some(node) => 
-        if(Pickup(node.toTypedJson).prepare){
+        val p = Pickup(node.toTypedJson)
+        if(p.prepare(s"order ${p.orderNo}")(user)){
           Accepted
         }else{
           Ok

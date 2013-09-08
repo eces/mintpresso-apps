@@ -15,18 +15,21 @@ import java.util.Date
 import scala.concurrent.duration._
 import actors._
 
-case class Pickup(var no: Long, var id: String, var title: String, var state: String,
+case class Pickup(var no: Long, var title: String, var state: String,
   var resultType: String, var resultQuery: JsObject,
+  var plans: List[JsObject], var orderNo: Long,
   var createdAt: Date, var updatedAt: Date) {
 
   def toJson: JsObject = {
     Json.obj(
       "$no"         -> this.no,
-      "$id"         -> this.id,
+      "$id"         -> "",
       "title"       -> this.title,
       "state"       -> this.state,
       "resultType"  -> this.resultType,
       "resultQuery" -> this.resultQuery,
+      "plans"       -> this.plans,
+      "orderNo"     -> this.orderNo,
       "$createdAt"  -> this.createdAt,
       "$updatedAt"  -> this.updatedAt
     )
@@ -49,6 +52,19 @@ case class Pickup(var no: Long, var id: String, var title: String, var state: St
     Node.delete(this.no)(User.Default)
   }
 
+  def addCallback(key: String) = {
+    // set hook for resource (rpush)
+    var callbacks: String = ""
+    Cache.getAs[String](s"${key} callback pickup") match {
+      case Some(s: String) => 
+        callbacks = (s.split(','):+this.no.toString).toSet.mkString(",")
+      case None =>
+        callbacks = this.no.toString
+    }
+    Logger.debug(s"${key} callback pickup := ${callbacks.toString}")
+    Cache.set(s"${key} callback pickup", callbacks)
+  }
+
   def prepare: Boolean = {
     // change running state of order.
     this.state = "running"
@@ -60,44 +76,55 @@ case class Pickup(var no: Long, var id: String, var title: String, var state: St
     }
   }
 
-  def prepare(orderKey: String)(user: User) = {
+  def prepare(orderKey: String)(user: User): Boolean = {
     // set timestamp
     val timestamp = new Date().getTime
     val duration = Duration("10 seconds")
+    val pickupKey = "pickup " + this.no
 
     // start immediately if it was paused.
-    val updatedAt = Cache.getAs[Long](s"pickup ${this.no} updatedAt").getOrElse(0L)
-    Cache.getAs[String](s"pickup ${this.no} state").getOrElse(this.state) match {
-      case "paused" | "running" => {
-        // do something only if scheduled interval is over
-        if((updatedAt + duration.toSeconds) <= timestamp){
-          // load plan
-          // resultType match {
-          //   case "status-create" =>
-          //     val parts = (resultQuery \ "format").as[String].split(' ')
-          //     if(parts.length != 3){
-          //       // error
-          //       false
-          //     }else{
-          //       user no listen music
-          //       music 
-          //       val sTypeNo = Type(parts(0)).no
-          //       val oTypeNo = Type(parts(2)).no
-          //       val jsonParts = parts(1).split(':')
-          //       val v = jsonParts(0)
-          //       val edgeJson = jsonParts(1)
-          //     }
-          //     Actors.pickup ! StatusCreateEachWithVerbAndJson(
-          //       v, edgeJson, s"pickup ${this.no}", orderKey, user.no, timestamp)
-              
-            // case _ =>
-            //   // error
-          // }
+    val updatedAt = Cache.getAs[Long](s"${pickupKey} updatedAt").getOrElse(0L)
+    
+    // change state
+    this.prepare
+    
+    // do something only if scheduled interval is over
+    if((updatedAt + duration.toSeconds) > timestamp){
+      return true
+    }
+
+    Cache.getAs[String](s"${pickupKey} state").getOrElse(this.state) match {
+      case "running" | "paused" => {
+        // branch by data types
+        resultType match {
+          case "model" => {
+            // fetch plans
+            plans.foreach { plan =>
+              val key = (plan \ "key").as[String]
+              var value = (plan \ "value").as[String]
+              key match {
+                case "add" =>
+                  try { 
+                    val json = Json.parse("\"" + value + "\"")
+                  } catch {
+                    case e: Exception => 
+                      // warn
+                      value = "$value"
+                  }
+                  Actors.pickup ! ModelUpdateJsonWithKey(value, pickupKey, orderKey, user.no, timestamp)
+                  addCallback(orderKey)
+                case _ => 
+              }
+            }
+            true
+          }
+          case _ => false
         }
       }
 
       // already in progress so let's drop it.
-      case "hold" =>
+      case "hold" => true
+      case _ => false
     }
   }
 
@@ -119,11 +146,12 @@ object Pickup {
     val key = (json \ "pickup").as[JsObject]
     Pickup(
       (key \ "$no").as[Long],
-      (key \ "$id").as[String],
       (key \ "title").as[String],
       (key \ "state").as[String],
       (key \ "resultType").as[String],
       (key \ "resultQuery").asOpt[JsObject].getOrElse(Json.obj()),
+      (key \ "plans").as[List[JsObject]],
+      (key \ "orderNo").as[Long],
       (key \ "$createdAt").as[Date],
       (key \ "$updatedAt").as[Date]
     )
