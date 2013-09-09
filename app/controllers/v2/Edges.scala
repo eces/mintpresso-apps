@@ -27,7 +27,6 @@ object Edges extends Controller with Secured with TypeConversion {
       case Some(sNode) => {
         val edges = Edge.findAllBySubjectAndTypeNo(sNode, v, Type(oT).no)
         if(edges.length > 0){
-          println(edges.length)
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
           Callback(Results.Ok, Json.arr())

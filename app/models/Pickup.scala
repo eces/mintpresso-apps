@@ -61,7 +61,7 @@ case class Pickup(var no: Long, var title: String, var state: String,
       case None =>
         callbacks = this.no.toString
     }
-    Logger.debug(s"${key} callback pickup := ${callbacks.toString}")
+    // Logger.debug(s"${key} callback pickup := ${callbacks.toString}")
     Cache.set(s"${key} callback pickup", callbacks)
   }
 

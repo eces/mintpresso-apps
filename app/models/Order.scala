@@ -62,7 +62,7 @@ case class Order(var no: Long, var title: String, var state: String,
         callbacks = this.no.toString
     }
     Cache.set(s"${key} callback order", callbacks)
-    Logger.debug(s"${key} callback order := ${callbacks.toString}")
+    // Logger.debug(s"${key} callback order := ${callbacks.toString}")
   }
 
   def prepare: Boolean = {
