@@ -131,10 +131,10 @@ LIMIT 1
     import actors._
     
     // node typeNo:?
-    Logger.debug(s"${user.no} node typeNo:${this.typeNo} callback order = ?")
+    // Logger.debug(s"${user.no} node typeNo:${this.typeNo} callback order = ?")
     Cache.getAs[String](s"${user.no} node typeNo:${this.typeNo} callback order") match {
       case Some(s: String) => 
-        Logger.debug(s"${user.no} node typeNo:${this.typeNo} callback order = ${s}")
+        // Logger.debug(s"${user.no} node typeNo:${this.typeNo} callback order = ${s}")
         s.split(',').foreach { orderNo =>
           Node.findOneByNo(orderNo.toLong) map { order =>
             Actors.order ! OrderCallback( Order(order.toTypedJson), user)

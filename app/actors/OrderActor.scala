@@ -31,7 +31,7 @@ class OrderActor extends Actor {
   def receive = {
 
     case OrderCallback(order, user) => {
-      Logger.debug("Order Callback - " + order.no)
+      // Logger.debug("Order Callback - " + order.no)
       order.prepare(user)
     } 
 
@@ -101,22 +101,22 @@ class OrderActor extends Actor {
       // put RDD or raw data
       if(list != null){
         Cache.set(s"${orderKey} json-list", list.toString )
-        Logger.debug(s"${orderKey} json-list = ${list.toString}")
+        // Logger.debug(s"${orderKey} json-list = ${list.toString}")
       }
       if(kv != null){
         Cache.set(s"${orderKey} json-kv", kv.toString )
-        Logger.debug(s"${orderKey} json-kv = ${kv.toString}")
+        // Logger.debug(s"${orderKey} json-kv = ${kv.toString}")
       }
       if(single != null){
         Cache.set(s"${orderKey} json-single", single.toString )
-        Logger.debug(s"${orderKey} json-single = ${single.toString}")
+        // Logger.debug(s"${orderKey} json-single = ${single.toString}")
       }
 
       Cache.set(s"${orderKey} state", oldState)
 
       
       // edge get, fetch
-      Logger.debug(s"${orderKey} callback pickup = ?")
+      // Logger.debug(s"${orderKey} callback pickup = ?")
       Cache.getAs[String](s"${orderKey} callback pickup") match {
         case Some(s: String) => 
           Logger.debug(s"${orderKey} callback pickup = ${s}")

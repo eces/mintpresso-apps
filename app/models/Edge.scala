@@ -71,10 +71,10 @@ LIMIT 1
     import actors._
     
     // verb
-    Logger.debug(s"${user.no} edge v:${this.v} callback order = ?")
+    // Logger.debug(s"${user.no} edge v:${this.v} callback order = ?")
     Cache.getAs[String](s"${user.no} edge v:${this.v} callback order") match {
       case Some(s: String) => 
-        Logger.debug(s"${user.no} edge v:${this.v} callback order = ${s}")
+        // Logger.debug(s"${user.no} edge v:${this.v} callback order = ${s}")
         s.split(',').foreach { orderNo =>
           Node.findOneByNo(orderNo.toLong) map { order =>
             Actors.order ! OrderCallback( Order(order.toTypedJson), user)
@@ -150,12 +150,14 @@ LIMIT 1
   FROM `edges`
   WHERE `owner` = {ownerNo}
     AND `s` = {s}
+    AND `v` = {v}
     AND `o` = {o}
   ORDER BY `updated` DESC
   LIMIT 1
   """
         ).on( 'ownerNo -> user.no, 
               's -> sNo,
+              'v -> v,
               'o -> oNo
         ).singleOpt(parser)
       }
@@ -173,12 +175,14 @@ LIMIT 1
   FROM `edges`
   WHERE `owner` = {ownerNo}
     AND `s` = {s}
+    AND `v` = {v}
     AND `o` = {o}
   ORDER BY `updated` DESC
   LIMIT 1
   """
         ).on( 'ownerNo -> user.no, 
               's -> s.no,
+              'v -> v,
               'o -> o.no
         ).singleOpt(parserWithNodes(s, o))
       }
@@ -196,10 +200,12 @@ LIMIT 1
   FROM `edges`
   WHERE `owner` = {ownerNo}
     AND `s` = {s}
+    AND `v` = {v}
     AND `oType` = {oType}
   """
         ).on( 'ownerNo -> user.no, 
               's -> s.no,
+              'v -> v,
               'oType -> oTypeNo
         ).as(parser *)
       }
@@ -217,10 +223,12 @@ LIMIT 1
   FROM `edges`
   WHERE `owner` = {ownerNo}
     AND `o` = {o}
+    AND `v` = {v}
     AND `sType` = {sType}
   """
         ).on( 'ownerNo -> user.no, 
               'o -> o.no,
+              'v -> v,
               'sType -> sTypeNo
         ).as(parser *)
       }
