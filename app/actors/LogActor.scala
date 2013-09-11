@@ -33,8 +33,8 @@ class LogActor extends Actor {
       log.saveAndLog(user)
     }
     case Debug(message: String, log: Request, user: User) => {
-      Logger.info("R> " + (log.acceptedAt.getTime - log.requestedAt.getTime))
-      Logger.info("P> " + (log.processedAt.getTime - log.acceptedAt.getTime))
+      // Logger.info("R> " + (log.acceptedAt.getTime - log.requestedAt.getTime))
+      // Logger.info("P> " + (log.processedAt.getTime - log.acceptedAt.getTime))
       log.threshold = "debug"
       log.saveAndLog(user)
     }
