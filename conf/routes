@@ -18,10 +18,10 @@ GET     /verbs/:ownerNo           controllers.Application.findVerbsByOwnerNo(own
 
 # Status(edge) API version 2
 GET     /:sT/:v/:oT               controllers.v2.Edges.findAllByTypes(sT: String, v: String, oT: String, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String])
-GET     /:sT/$sNo<[0-9]+>/:v/:oT  controllers.v2.Edges.findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String)
-GET     /:sT/:v/:oT/$oNo<[0-9]+>  controllers.v2.Edges.findAllByObjectNo(sT: String, v: String, oT: String, oNo: Long)
-GET     /:sT/:sId/:v/some/:oT     controllers.v2.Edges.findAllBySubjectId(sT: String, sId: String, v: String, oT: String)
-GET     /some/:sT/:v/:oT/:oId     controllers.v2.Edges.findAllByObjectId(sT: String, v: String, oT: String, oId: String)
+GET     /:sT/$sNo<[0-9]+>/:v/:oT  controllers.v2.Edges.findAllBySubjectNo(sT: String, sNo: Long, v: String, oT: String, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String])
+GET     /:sT/:v/:oT/$oNo<[0-9]+>  controllers.v2.Edges.findAllByObjectNo(sT: String, v: String, oT: String, oNo: Long, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String])
+GET     /:sT/:sId/:v/some/:oT     controllers.v2.Edges.findAllBySubjectId(sT: String, sId: String, v: String, oT: String, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String])
+GET     /some/:sT/:v/:oT/:oId     controllers.v2.Edges.findAllByObjectId(sT: String, v: String, oT: String, oId: String, offset: Option[Long], limit: Option[Long], newest: Option[String], oldest: Option[String])
 
 # accepts both $no and $id
 GET     /:sT/:s/:v/:oT/:o        controllers.v2.Edges.findOne(sT: String, s: String, v: String, oT: String, o: String)

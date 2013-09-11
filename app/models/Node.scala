@@ -250,16 +250,17 @@ LIMIT 1
   }
 
   // internal use only !
-  def findAllByTypeNo(typeNo: Long)(implicit user: User): List[Node] = {
+  def findAllByTypeNo(typeNo: Long, orderBy: String = "", limit: String = "")(implicit user: User): List[Node] = {
     DB.withConnection { implicit conn =>
       SQL(
-  """
+  s"""
   SELECT *
   FROM `nodes`, `types`
   WHERE `owner` = {ownerNo}
     AND `nodes`.`type` = {typeNo}
     AND `types`.`no` = {typeNo}
-  ORDER BY `updated` DESC
+  ${orderBy}
+  ${limit}
   """
       ).on( 'ownerNo -> user.no,
             'typeNo -> typeNo

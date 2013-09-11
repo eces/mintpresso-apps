@@ -189,19 +189,21 @@ LIMIT 1
     } 
   }
 
-  def findAllBySubjectAndTypeNo(s: Node, v: String, oTypeNo: Long)(implicit user: User = User.Default): List[Edge] = {
+  def findAllBySubjectAndTypeNo(s: Node, v: String, oTypeNo: Long, orderBy: String = "", limit: String = "")(implicit user: User = User.Default): List[Edge] = {
     if(v.length == 0){
       List()
     }else{
       DB.withConnection { implicit conn =>
         SQL(
-  """
+  s"""
   SELECT *
   FROM `edges`
   WHERE `owner` = {ownerNo}
     AND `s` = {s}
     AND `v` = {v}
     AND `oType` = {oType}
+  ${orderBy}
+  ${limit}
   """
         ).on( 'ownerNo -> user.no, 
               's -> s.no,
@@ -212,19 +214,21 @@ LIMIT 1
     } 
   }
 
-  def findAllByTypeNoAndObject(sTypeNo: Long, v: String, o: Node)(implicit user: User = User.Default): List[Edge] = {
+  def findAllByTypeNoAndObject(sTypeNo: Long, v: String, o: Node, orderBy: String = "", limit: String = "")(implicit user: User = User.Default): List[Edge] = {
     if(v.length == 0){
       List()
     }else{
       DB.withConnection { implicit conn =>
         SQL(
-  """
+  s"""
   SELECT *
   FROM `edges`
   WHERE `owner` = {ownerNo}
     AND `o` = {o}
     AND `v` = {v}
     AND `sType` = {sType}
+  ${orderBy}
+  ${limit}
   """
         ).on( 'ownerNo -> user.no, 
               'o -> o.no,

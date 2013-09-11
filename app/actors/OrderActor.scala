@@ -119,7 +119,7 @@ class OrderActor extends Actor {
       // Logger.debug(s"${orderKey} callback pickup = ?")
       Cache.getAs[String](s"${orderKey} callback pickup") match {
         case Some(s: String) => 
-          Logger.debug(s"${orderKey} callback pickup = ${s}")
+          // Logger.debug(s"${orderKey} callback pickup = ${s}")
           s.split(',').foreach { pickupNo =>
             Node.findOneByNo(pickupNo.toLong) map { pickup =>
               // pass empty user explicitly

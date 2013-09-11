@@ -28,7 +28,7 @@ object Nodes extends Controller with Secured {
     }
     var orderBy = Node.orderBy(newest, oldest)
     var slice = Node.limitBy(offset, limit)
-    val nodes = Node.findAllByTypeNoAndJson(Type(typeName).no, pureJson)
+    val nodes = Node.findAllByTypeNoAndJson(Type(typeName).no, pureJson, orderBy, slice)
     if(nodes.length > 0){
       Callback(Results.Ok, nodes.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
     }else{
