@@ -19,6 +19,7 @@ case class Webhook(url: String, method: String, json: Boolean, key: String, orde
 case class StatusCreateWithTypesAndVerb(sTypeNo: Long, oTypeNo: Long, v: String, edgeJson: String, pickupKey: String, orderKey: String, userNo: Long, timestamp: Long)
 case class StatusCreateForEach(jsonFieldName: String, v: String, pickupKey: String, orderKey: String, userNo: Long, timestamp: Long)
 case class ModelUpdateJsonWithKey(jsonFieldName: String, pickupKey: String, orderKey: String, userNo: Long, timestamp: Long)
+case class ModelSubtractJsonWithKey(storeKey: String, baseKey: String, pickupKey: String, orderKey: String, userNo: Long, timestamp: Long)
 case class PickupCallback(pickup: Pickup, orderKey: String, user: User)
 // PushNotification (long polling)
 
@@ -51,6 +52,47 @@ class PickupActor extends Actor {
 
                 // respond callback
                 node.callback(User.Empty(userNo))
+
+              } getOrElse {
+                // error
+              }
+            }
+          case None =>
+            // warn
+        }
+      }
+      Cache.set(s"${pickupKey} state", oldState)
+    }
+
+    case ModelSubtractJsonWithKey(storeKey, baseKey, pickupKey, orderKey, userNo, timestamp) => {
+      val oldState = Cache.getAs[String](s"${pickupKey} state").getOrElse("paused")
+      Cache.set(s"${pickupKey} state", "hold")
+
+      val updatedAt = Cache.getAs[Long](s"${pickupKey} updatedAt").getOrElse(0L)
+      // skip if pickup has been updated to newer result.
+      if(updatedAt > timestamp){
+        // info - report to app@mintpresso.com
+      }else{
+        Cache.getAs[String](s"${orderKey} json-kv") match {
+          case Some(values) =>
+            Json.parse(values).as[List[JsObject]].foreach { kv =>
+              val key = (kv \ "key").as[Long]
+              val value = (kv \ "value").as[Long]
+              Node.findOneByNo(key) map { node =>
+                node.updatedAt = new java.util.Date
+                (node.json \ baseKey).asOpt[Long] map { baseValue =>
+                  val newValue = baseValue - value
+                  val storeValue = (node.json \ storeKey).asOpt[Long].getOrElse(0L)
+                  // do not update
+                  if(storeValue != newValue){
+                    node.json = node.json ++ Json.obj( storeKey -> newValue )
+                    node.save
+                    // respond callback
+                    node.callback(User.Empty(userNo))
+                  }  
+                } getOrElse {
+                  // not found
+                }
 
               } getOrElse {
                 // error

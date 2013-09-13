@@ -113,6 +113,17 @@ case class Pickup(var no: Long, var title: String, var state: String,
                   }
                   Actors.pickup ! ModelUpdateJsonWithKey(value, pickupKey, orderKey, user.no, timestamp)
                   addCallback(orderKey)
+                case "subtract" =>
+                  val p1 = value.split('~')
+                  if(p1.length != 2){
+                    // error
+                    return false
+                  }
+                  var storeKey = p1(0)
+                  var baseKey = p1(1)
+
+                  Actors.pickup ! ModelSubtractJsonWithKey(storeKey, baseKey, pickupKey, orderKey, user.no, timestamp)
+                  addCallback(orderKey)
                 case _ => 
               }
             }
