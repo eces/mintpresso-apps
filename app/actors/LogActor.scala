@@ -22,20 +22,24 @@ class LogActor extends Actor {
   def receive = {
     case Error(message: String, log: Request, user: User) => {
       log.threshold = "error"
+      log.message = message
       log.saveAndLog(user)
     }
     case Warn(message: String, log: Request, user: User) => {
       log.threshold = "warn"
+      log.message = message
       log.saveAndLog(user)
     }
     case Info(message: String, log: Request, user: User) => {
       log.threshold = "info"
+      log.message = message
       log.saveAndLog(user)
     }
     case Debug(message: String, log: Request, user: User) => {
       // Logger.info("R> " + (log.acceptedAt.getTime - log.requestedAt.getTime))
       // Logger.info("P> " + (log.processedAt.getTime - log.acceptedAt.getTime))
       log.threshold = "debug"
+      log.message = message
       log.saveAndLog(user)
     }
   }
