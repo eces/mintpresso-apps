@@ -15,8 +15,10 @@ object Edges extends Controller with Secured with TypeConversion {
     var orderBy = Edge.orderBy(newest, oldest)
     var slice = Edge.limitBy(offset, limit)
     val edges = Edge.findAllByTypes(Type(sT).no, v, Type(oT).no, orderBy, slice)
-    this.log.trace = "controllers.Edges.findAllByTypes"
+    
     this.log.processedAt = new java.util.Date
+    this.log.trace = "controllers.Edges.findAllByTypes"
+
     if(edges.length > 0){
       Actors.log ! Debug("edge.found="+edges.length, log, user)
       Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
@@ -32,14 +34,21 @@ object Edges extends Controller with Secured with TypeConversion {
         var orderBy = Edge.orderBy(newest, oldest)
         var slice = Edge.limitBy(offset, limit)
         val edges = Edge.findAllBySubjectAndTypeNo(sNode, v, Type(oT).no, orderBy, slice)
+
+        this.log.processedAt = new java.util.Date
+        this.log.trace = "controllers.Edges.findAllBySubjectNo"
+
         if(edges.length > 0){
+          Actors.log ! Debug("edge.found="+edges.length, log, user)
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
+          Actors.log ! Debug("edge.found=0", log, user)
           Callback(Results.Ok, Json.arr())
         }
       }
       case None => {
         // info
+        Actors.log ! Info("node.empty", log, user)
         NotFound
       }
     }
@@ -51,14 +60,21 @@ object Edges extends Controller with Secured with TypeConversion {
         var orderBy = Edge.orderBy(newest, oldest)
         var slice = Edge.limitBy(offset, limit)
         val edges = Edge.findAllBySubjectAndTypeNo(sNode, v, Type(oT).no, orderBy, slice)
+
+        this.log.processedAt = new java.util.Date
+        this.log.trace = "controllers.Edges.findAllBySubjectId"
+
         if(edges.length > 0){
+          Actors.log ! Debug("edge.found="+edges.length, log, user)
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
+          Actors.log ! Debug("edge.found=0", log, user)
           Callback(Results.Ok, Json.arr())
         }
       }
       case None => {
         // info
+        Actors.log ! Info("node.empty", log, user)
         NotFound
       }
     }
@@ -70,14 +86,21 @@ object Edges extends Controller with Secured with TypeConversion {
         var orderBy = Edge.orderBy(newest, oldest)
         var slice = Edge.limitBy(offset, limit)
         val edges = Edge.findAllByTypeNoAndObject(Type(sT).no, v, oNode, orderBy, slice)
+
+        this.log.processedAt = new java.util.Date
+        this.log.trace = "controllers.Edges.findAllByObjectNo"
+
         if(edges.length > 0){
+          Actors.log ! Debug("edge.found="+edges.length, log, user)
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
+          Actors.log ! Debug("edge.found=0", log, user)
           Callback(Results.Ok, Json.arr())
         }
       }
       case None => {
         // info
+        Actors.log ! Info("node.empty", log, user)
         NotFound
       }
     }
@@ -89,20 +112,28 @@ object Edges extends Controller with Secured with TypeConversion {
         var orderBy = Edge.orderBy(newest, oldest)
         var slice = Edge.limitBy(offset, limit)
         val edges = Edge.findAllByTypeNoAndObject(Type(sT).no, v, oNode, orderBy, slice)
+
+        this.log.processedAt = new java.util.Date
+        this.log.trace = "controllers.Edges.findAllByObjectId"
+
         if(edges.length > 0){
+          Actors.log ! Debug("edge.found="+edges.length, log, user)
           Callback(Results.Ok, edges.foldLeft(Json.arr()) { (a, b) => a.append(b.toJson) } )
         }else{
+          Actors.log ! Debug("edge.found=0", log, user)
           Callback(Results.Ok, Json.arr())
         }
       }
       case None => {
         // info
+        Actors.log ! Info("node.empty", log, user)
         NotFound
       }
     }
   }
 
   def findOne(sT: String, s: String, v: String, oT: String, o: String) = Signed("search_status") { implicit request => implicit user =>
+    this.log.trace = "controllers.Edges.findOne"
 
     var sNode: Option[Node] = None
     var oNode: Option[Node] = None
@@ -132,9 +163,15 @@ object Edges extends Controller with Secured with TypeConversion {
           case Some(e) => 
             if(sNode.typeName != sT || oNode.typeName != oT){
               // warning
+              this.log.processedAt = new java.util.Date
+              Actors.log ! Warn("node.type.invalid", log, user)
+              
               NotFound
             }else{
               // debug
+              this.log.processedAt = new java.util.Date
+              Actors.log ! Debug("edge.found=1", log, user)
+
               Callback(Results.Ok, e.toJson)
             }
           case None =>
@@ -143,20 +180,25 @@ object Edges extends Controller with Secured with TypeConversion {
       }
       case (Some(sNode), None) => {
         // info
+        Actors.log ! Info("edge.object.empty", log, user)
         Status(422)
       }
       case (None, Some(oNode)) => {
         // info
+        Actors.log ! Info("edge.subject.empty", log, user)
         Status(422)
       }
       case (None, None) => {
         // info
+        Actors.log ! Info("edge.node.empty", log, user)
         Status(422)
       }
     }
   }
 
   def add(sT: String, s: String, v: String, oT: String, o: String) = Signed("create_status") { implicit request => implicit user =>
+    this.log.trace = "controllers.Edges.add"
+
     var sNode: Option[Node] = None
     var oNode: Option[Node] = None
 
@@ -198,44 +240,59 @@ object Edges extends Controller with Secured with TypeConversion {
           case Some(jsValue) => e.json = jsValue.as[JsObject]
           case None if parsed => {
             // warn
+            Actors.log ! Warn("json.invalid", log, user)
           }
           case _ =>
         }
         
         e.save match {
           case Some(no: Long) => {
+            // debug
+            this.log.processedAt = new java.util.Date
+            Actors.log ! Debug("edge.add", log, user)
+
             // respond callback
             e.callback
-            // debug
             Callback(Results.Created, Edge.findOneByNo(no).get.toJson)
           }
           case None => {
             // error: failed to add new status
+            this.log.processedAt = new java.util.Date
+            Actors.log ! Error("edge.add.fail", log, user)
+
             InternalServerError
           }
         }  
       }
       case (Some(sNode), None) => {
         // info
+        Actors.log ! Info("edge.object.empty", log, user)
         Status(422)
       }
       case (None, Some(oNode)) => {
         // info
+        Actors.log ! Info("edge.subject.empty", log, user)
         Status(422)
       }
       case (None, None) => {
         // info
+        Actors.log ! Info("edge.node.empty", log, user)
         Status(422)
       }
     }
   }
 
   def delete(no: Long) = Signed("delete_status") { implicit request => implicit user =>
+    this.log.trace = "controllers.Edges.findAllByTypes"
     if(Edge.deleteByNo(no)){
+      this.log.processedAt = new java.util.Date
       // debug
+      Actors.log ! Debug("edge.delete", log, user)
       Accepted
     }else{
+      this.log.processedAt = new java.util.Date
       // info
+      Actors.log ! Info("edge.delete.fail", log, user)
       NoContent
     }
   }

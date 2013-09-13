@@ -14,6 +14,7 @@ import play.api.Logger
 import java.util.Date
 import scala.concurrent.duration._
 import actors._
+import controllers.v2.Orders
 
 case class Order(var no: Long, var title: String, var state: String,
   var dataType: String, var dataQuery: String,
@@ -79,6 +80,8 @@ case class Order(var no: Long, var title: String, var state: String,
   }
 
   def prepare(user: User): Boolean = {
+    Orders.log.trace = "models.Order.prepare"
+    
     // set timestamp
     val timestamp = new Date().getTime
     val duration = Duration(this.duration)
@@ -92,10 +95,10 @@ case class Order(var no: Long, var title: String, var state: String,
       return true
     }
 
-    Logger.debug("Prepare")
     Cache.getAs[String](s"${orderKey} state").getOrElse(this.state) match {
       case "running" | "paused" => {
         // branch by data types
+        Orders.log.stackTrace = this.toTypedJson.toString
         dataType match {
           case "status" => {
             // fetch plans
@@ -106,6 +109,7 @@ case class Order(var no: Long, var title: String, var state: String,
                 case "count" =>
                   val parts = dataQuery.split(' ')
                   if(parts.length != 3){
+                    Actors.log ! actors.Error("order.edge.count", Orders.log, user)
                     // error
                     return false
                   }else{
@@ -136,7 +140,9 @@ case class Order(var no: Long, var title: String, var state: String,
                         // column = "`o` as `key`,"
                         // groupBy = "GROUP BY `o`"
                       case "v" => 
+                        // do nothing
                       case _ => 
+                        Actors.log ! actors.Error("order.value.invalid", Orders.log, user)
                         // error
                         return false
                     }
@@ -146,6 +152,7 @@ case class Order(var no: Long, var title: String, var state: String,
 
                     Actors.order ! EdgeCountWithTypesAndVerb(
                       sTypeNo, oTypeNo, v, value, s"order ${this.no}", user.no, timestamp)
+                    Actors.log ! actors.Debug("order.prepare", Orders.log, user)
                     // if(jsonMatcher){
                     //   Actors.order ! EdgeCountWithTypesAndVerbAndJson(sTypeNo, oTypeNo, v, value, s"order ${this.no}", user.no, timestamp)
                     // }else{
@@ -155,13 +162,17 @@ case class Order(var no: Long, var title: String, var state: String,
                   }
                 case _ => 
                   // error 
+                  Actors.log ! actors.Error("order.plan.invalid", Orders.log, user)
               }
             }
             true
           }
-          case "model" => false
+          case "model" => 
+            Actors.log ! actors.Error("error.501", Orders.log, user)
+            false
           case _ => {
             // error
+            Actors.log ! actors.Error("order.dataType.invalid", Orders.log, user)
             false
           } 
         }
@@ -169,7 +180,9 @@ case class Order(var no: Long, var title: String, var state: String,
 
       // already in progress so let's drop it.
       case "hold" => true
-      case _ => false
+      case _ => 
+        Actors.log ! actors.Error("order.state.invalid", Orders.log, user)
+        false
     }
   }
 
