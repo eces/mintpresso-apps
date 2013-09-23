@@ -54,7 +54,9 @@ case class Request(var id: String, var no: Long, var uri: String,
   def saveAndLog(user: User) = {
     this.save map { requestNo =>
       // save to app@mintpresso.com but belong to each user.
-      Edge( 0L, 1, Node.findOneByNo(user.no).get, "log", Node.findOneByNo(requestNo).get).save
+      val edge = Edge( 0L, 1, Node.findOneByNo(user.no).get, "log", Node.findOneByNo(requestNo).get)
+      edge.save
+      edge.callback(user)
     }
   }
 

@@ -61,7 +61,7 @@ case class Pickup(var no: Long, var title: String, var state: String,
       case None =>
         callbacks = this.no.toString
     }
-    // Logger.debug(s"${key} callback pickup := ${callbacks.toString}")
+    // Logger.debug(s"${key} callback pickup(${this.no}) := ${callbacks.toString}")
     Cache.set(s"${key} callback pickup", callbacks)
   }
 
@@ -80,18 +80,20 @@ case class Pickup(var no: Long, var title: String, var state: String,
     // set timestamp
     val timestamp = new Date().getTime
     val duration = Duration("10 seconds")
+    val seconds = duration.toSeconds * 1000
     val pickupKey = "pickup " + this.no
 
     // start immediately if it was paused.
-    val updatedAt = Cache.getAs[Long](s"${pickupKey} updatedAt").getOrElse(0L)
+    // val updatedAt = Cache.getAs[Long](s"${pickupKey} updatedAt").getOrElse( this.updatedAt.getTime )
     
-    // change state
-    this.prepare
     
     // do something only if scheduled interval is over
-    if((updatedAt + duration.toSeconds) > timestamp){
+    if(this.state != "paused" && (updatedAt.getTime + seconds) > timestamp){
       return true
     }
+
+    // change state
+    this.prepare
 
     Cache.getAs[String](s"${pickupKey} state").getOrElse(this.state) match {
       case "running" | "paused" => {
