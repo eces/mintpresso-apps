@@ -58,12 +58,12 @@ case class Order(var no: Long, var title: String, var state: String,
     var callbacks: String = ""
     Cache.getAs[String](s"${key} callback order") match {
       case Some(s: String) => 
-        callbacks = (s.split(','):+this.no.toString).toSet.mkString(",")
+        callbacks = (s.split(',').toSet + this.no.toString).mkString(",")
       case None =>
         callbacks = this.no.toString
     }
     Cache.set(s"${key} callback order", callbacks)
-    Logger.debug(s"${key} callback order(${this.no}) := ${callbacks.toString}")
+    // Logger.debug(s"${key} callback order(${this.no}) := ${callbacks.toString}")
   }
 
   def prepare: Boolean = {
@@ -84,9 +84,10 @@ case class Order(var no: Long, var title: String, var state: String,
     
     // set timestamp
     val timestamp = new Date().getTime
-    val duration = Duration(this.duration)
-    // val seconds = duration.toSeconds * 1000
-    val seconds = 10 * 1000
+    // val duration = Duration(this.duration)
+    val duration = Duration("500 ms")
+    val seconds = duration.toMillis
+    // val seconds = 10 * 1000
     val orderKey = "order " + this.no
 
     // start immediately if it was paused.
@@ -94,14 +95,13 @@ case class Order(var no: Long, var title: String, var state: String,
 
     // Logger.debug(s"interval: ${ (updatedAt + duration.toSeconds) > timestamp }")
     // Logger.debug(s"interval: ${ updatedAt } / ${ seconds }")
-    Logger.debug(s"interval: ${ updatedAt } / ${ seconds }")
     // do something only if scheduled interval is over
     // execute anyway at the first time
     if(this.state != "paused" && (updatedAt.getTime + seconds) > timestamp){
-      Logger.debug(s"interval: skip")
+      // Logger.debug(s"interval: skip")
       return true
     }
-    Logger.debug(s"interval: -")
+    // Logger.debug(s"interval: -")
 
     Cache.getAs[String](s"${orderKey} state").getOrElse(this.state) match {
       case "running" | "paused" => {
@@ -160,7 +160,7 @@ case class Order(var no: Long, var title: String, var state: String,
 
                     Actors.order ! EdgeCountWithTypesAndVerb(
                       sTypeNo, oTypeNo, v, value, s"order ${this.no}", user.no, timestamp)
-                    Actors.log ! actors.Debug("order.prepare", Orders.log, user)
+                    // Actors.log ! actors.Info("order.prepare", Orders.log, user)
                     // if(jsonMatcher){
                     //   Actors.order ! EdgeCountWithTypesAndVerbAndJson(sTypeNo, oTypeNo, v, value, s"order ${this.no}", user.no, timestamp)
                     // }else{
@@ -196,6 +196,7 @@ case class Order(var no: Long, var title: String, var state: String,
 
   def cancel: Boolean = {
     // send stop command to Cache state.
+    Cache.remove(s"order ${this.no} state")
     
     // change running state to paused.
     this.state = "paused"
@@ -203,6 +204,20 @@ case class Order(var no: Long, var title: String, var state: String,
       case Some(_) => true
       case None => false
     }
+
+    // // remove hook
+    // var callbacks: String = ""
+    // Cache.getAs[String](s"${key} callback order") match {
+    //   case Some(s: String) => 
+    //     callbacks = (s.split(',').toSet - this.no.toString).mkString(",")
+    //   case None =>
+    //     callbacks = this.no.toString
+    // }
+    // if(callbacks.length > 0){
+    //   Cache.set(s"${key} callback order", callbacks)
+    // }else{
+    //   Cache.set(s"${key} callback order", callbacks)
+    // }
   }
 }
 

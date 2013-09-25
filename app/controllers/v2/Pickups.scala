@@ -33,16 +33,24 @@ object Pickups extends Controller with Secured {
   def findOneByNo(no: Long) = Signed("read_pickup") { implicit request => implicit user =>
     Node.findOneByNo(no) match {
       case Some(node) => 
-        Edge.findAllByTypeNoAndObject(Type("order").no, "respond", node) match {
-          case first :: other => {
-            val sNo = first.s.no
-            Cache.getAs[String](s"order ${sNo} json") match {
-              case Some(json) => Callback(Results.Ok, Json.parse(json))
-              case None => Status(429)("pickup.cache.empty") 
-            }
-          }
-          case List() => Status(404)("order.empty") 
+        val pickup = Pickup(node.toTypedJson)
+        Cache.getAs[String](s"order ${pickup.orderNo} json-kv") match {
+          case Some(json) => Callback(Results.Ok, Json.parse(json))
+          
+          // skip double check
+          // Status(404)("order.empty")
+          case None => Status(429)("pickup.cache.empty") 
         }
+        // Edge.findAllByTypeNoAndObject(Type("order").no, "respond", node) match {
+        //   case first :: other => {
+        //     val sNo = first.s.no
+        //     Cache.getAs[String](s"order ${sNo} json") match {
+        //       case Some(json) => Callback(Results.Ok, Json.parse(json))
+        //       case None => Status(429)("pickup.cache.empty") 
+        //     }
+        //   }
+        //   case List() => Status(404)("order.empty") 
+        // }
       case None =>
         NotFound
     }

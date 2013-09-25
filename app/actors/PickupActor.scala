@@ -27,7 +27,6 @@ class PickupActor extends Actor {
   def receive = {
 
     case PickupCallback(pickup, orderKey, user) => {
-      // Logger.debug("Pickup Callback - " + pickup.no)
       pickup.prepare(orderKey)(user)
     }
 

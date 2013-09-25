@@ -31,7 +31,6 @@ class OrderActor extends Actor {
   def receive = {
 
     case OrderCallback(order, user) => {
-      // Logger.debug("Order Callback - " + order.no)
       order.prepare(user)
     } 
 

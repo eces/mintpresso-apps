@@ -14,6 +14,7 @@ import play.api.Logger
 import java.util.Date
 import scala.concurrent.duration._
 import actors._
+import controllers.v2.Pickups
 
 case class Pickup(var no: Long, var title: String, var state: String,
   var resultType: String, var resultQuery: String,
@@ -77,10 +78,12 @@ case class Pickup(var no: Long, var title: String, var state: String,
   }
 
   def prepare(orderKey: String)(user: User): Boolean = {
+    Pickups.log.trace = "models.Pickup.prepare"
+
     // set timestamp
     val timestamp = new Date().getTime
-    val duration = Duration("10 seconds")
-    val seconds = duration.toSeconds * 1000
+    val duration = Duration("500 ms")
+    val seconds = duration.toMillis
     val pickupKey = "pickup " + this.no
 
     // start immediately if it was paused.
@@ -110,6 +113,7 @@ case class Pickup(var no: Long, var title: String, var state: String,
                     val json = Json.parse("\"" + value + "\"")
                   } catch {
                     case e: Exception => 
+                      Actors.log ! actors.Warn("pickup.json.invalid", Pickups.log, user)
                       // warn
                       value = "value"
                   }
@@ -119,6 +123,7 @@ case class Pickup(var no: Long, var title: String, var state: String,
                   val p1 = value.split('~')
                   if(p1.length != 2){
                     // error
+                    Actors.log ! actors.Error("pickup.value.invalid", Pickups.log, user)
                     return false
                   }
                   var storeKey = p1(0)
@@ -150,7 +155,7 @@ case class Pickup(var no: Long, var title: String, var state: String,
                   }
                   val parts = resultQuery.split(' ')
                   if(parts.length != 3){
-                    Logger.error("parts.length")
+                    Actors.log ! actors.Error("pickup.value.invalid", Pickups.log, user)
                     return false
                   }
                   Actors.pickup ! StatusCreateForEach(value, parts(1), pickupKey, orderKey, user.no, timestamp)
