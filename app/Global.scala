@@ -42,6 +42,8 @@ object Global extends GlobalSettings {
   override def onStart(app: Application) {
     import models._
     import play.api.libs._
+    import play.api.libs.json._
+    import java.util.Date
     Node.findOneByNo(1) match {
       case Some(n) => {}
       case None => {
@@ -75,6 +77,18 @@ object Global extends GlobalSettings {
           case None =>
             Logger.info(s"key(...) not created.")
         }
+
+        // user log request - count
+        val o1 = Order(0, "user log request - count", "paused", "status", "user log request",
+          List(Json.obj("key" -> "count", "value" -> "s")), "500 ms", new Date , new Date )
+        o1.save
+        Logger.info(s"order(user log request - count) created.")
+
+        // user logs request - add
+        val p1 = Pickup(0, "user logs request - add", "paused", "status", "user logs request",
+          List(Json.obj("key" -> "add", "value" -> "")), 3, new Date , new Date )
+        p1.save
+        Logger.info(s"pickup(user logs request - add) created.")
 
       }
     }
