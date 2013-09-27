@@ -70,14 +70,13 @@ trait Secured {
         try {
           // should be form of "{user.no} {apikey.no}"
           values = Crypto.decryptAES(keys(1)).split(' ')
-
           if(values.length != 2){
             Results.Status(401)("key.invalid.length")
           }else{
-            User.findOneByNo( values(0).toLong ) map { implicit user =>
-              Key.findOneByNo( values(1).toLong ) map { key =>
+            User.findOneByNo( values(0).toLong )(User.Default) map { user =>
+              Key.findOneByNo( values(1).toLong )(User.Default) map { key =>
                 // user issue key ?
-                Edge.findOne(user.no, "issue", key.no) match {
+                Edge.findOne(user.no, "issue", key.no)(User.Default) match {
                   case Some(e) => {
                     // filter remote address
                     if(key.url.contains("*") || key.address.contains( request.remoteAddress ) ){
